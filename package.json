@@ -1,0 +1,18 @@
+{
+  "name": "digitbuild-platform",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "apps/web",
+    "apps/api"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace apps/api\" \"npm run dev --workspace apps/web\"",
+    "build": "npm run build --workspace apps/web && npm run build --workspace apps/api",
+    "start": "npm run start --workspace apps/api",
+    "lint": "npm run lint --workspace apps/web && npm run lint --workspace apps/api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
