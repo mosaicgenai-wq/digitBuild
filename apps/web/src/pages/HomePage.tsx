@@ -1,5 +1,5 @@
-import { ArrowRight, BookOpen, Briefcase, FileCheck, FileText, Globe, GraduationCap, Laptop, Linkedin, MessageSquare, Quote, Settings, Shield, Users } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { BookOpen, Briefcase, ChevronLeft, ChevronRight, FileCheck, FileText, Globe, GraduationCap, Laptop, Linkedin, MessageSquare, Quote, Settings, Shield, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Counter } from '../components/ui/Counter';
 import { Reveal } from '../components/ui/Reveal';
@@ -60,23 +60,88 @@ const testimonials = [
 ];
 
 export default function HomePage() {
-  const sliderRef = useRef<HTMLDivElement | null>(null);
-  const [dragging, setDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [testimonialDirection, setTestimonialDirection] = useState<-1 | 0 | 1>(0);
+  const [isTestimonialAnimating, setIsTestimonialAnimating] = useState(false);
+  const [isTestimonialResetting, setIsTestimonialResetting] = useState(false);
 
   useEffect(() => {
-    const node = sliderRef.current;
-    if (!node) return;
-
     const timer = window.setInterval(() => {
-      if (dragging) return;
-      node.scrollLeft += 1;
-      if (node.scrollLeft >= node.scrollWidth - node.clientWidth) node.scrollLeft = 0;
-    }, 30);
+      if (!isTestimonialAnimating) {
+        handleTestimonialChange(1);
+      }
+    }, 5000);
 
     return () => window.clearInterval(timer);
-  }, [dragging]);
+  }, [isTestimonialAnimating]);
+
+  const handleTestimonialChange = (direction: -1 | 1) => {
+    if (isTestimonialAnimating) return;
+
+    setTestimonialDirection(direction);
+    setIsTestimonialAnimating(true);
+  };
+
+  const renderedTestimonials = [-2, -1, 0, 1, 2].map((offset) => {
+    const index = (activeIndex + offset + testimonials.length) % testimonials.length;
+
+    return {
+      ...testimonials[index],
+      carouselIndex: index,
+      offset,
+    };
+  });
+
+  // const getVisualSlot = (index: number): 'far-prev' | 'prev' | 'active' | 'next' | 'far-next' => {
+  //   return ['far-prev', 'prev', 'active', 'next', 'far-next'][index] as 'far-prev' | 'prev' | 'active' | 'next' | 'far-next';
+  // };
+
+  const getVisualSlot = (index: number) => {
+    if (!isTestimonialAnimating) {
+      return ['far-prev', 'prev', 'active', 'next', 'far-next'][index];
+    }
+
+    if (testimonialDirection === 1) {
+      // shifting left → next becomes active DURING animation
+      return ['far-prev', 'prev', 'next', 'active', 'far-next'][index];
+    }
+
+    if (testimonialDirection === -1) {
+      // shifting right → prev becomes active DURING animation
+      return ['far-prev', 'active', 'prev', 'next', 'far-next'][index];
+    }
+
+    return ['far-prev', 'prev', 'active', 'next', 'far-next'][index];
+  };
+
+  const finishTestimonialAnimation = () => {
+    if (!isTestimonialAnimating || testimonialDirection === 0) return;
+
+    setActiveIndex((current) => (current + testimonialDirection + testimonials.length) % testimonials.length);
+    setIsTestimonialResetting(true);
+
+    window.requestAnimationFrame(() => {
+      setTestimonialDirection(0);
+      setIsTestimonialAnimating(false);
+      setIsTestimonialResetting(false);
+    });
+  };
+
+  const getTestimonialTransform = () => {
+    if (isTestimonialResetting || testimonialDirection === 0) {
+      return 'translateX(var(--testimonial-base-offset))';
+    }
+
+    if (testimonialDirection === 1) {
+      return 'translateX(calc(var(--testimonial-base-offset) - var(--testimonial-step)))';
+    }
+
+    if (testimonialDirection === -1) {
+      return 'translateX(calc(var(--testimonial-base-offset) + var(--testimonial-step)))';
+    }
+
+    return 'translateX(var(--testimonial-base-offset))';
+  };
 
   return (
     <main>
@@ -219,18 +284,15 @@ export default function HomePage() {
             <SectionEyebrow>Services</SectionEyebrow>
             <SectionTitle className="mb-12">Everything you need to succeed</SectionTitle>
           </Reveal>
-          <div className="service-list">
+          <div className="card-grid card-grid-3">
             {services.map((service, index) => (
               <Reveal key={service.title} delay={index * 0.06}>
-                <a href={service.to} className="service-item">
-                  <div className="service-item-main">
-                    <service.icon className="service-icon" strokeWidth={1.5} />
-                    <div>
-                      <h3>{service.title}</h3>
-                      <p>{service.desc}</p>
-                    </div>
+                <a href={service.to} className="service-card-link">
+                  <div className="info-card">
+                    <service.icon className="info-icon" strokeWidth={1.5} />
+                    <h3>{service.title}</h3>
+                    <p>{service.desc}</p>
                   </div>
-                  <ArrowRight className="service-arrow" />
                 </a>
               </Reveal>
             ))}
@@ -269,43 +331,57 @@ export default function HomePage() {
             <SectionTitle>What our students say</SectionTitle>
           </Reveal>
         </div>
-        <div
-          ref={sliderRef}
-          className="testimonial-strip"
-          onMouseDown={(event) => {
-            const node = sliderRef.current;
-            if (!node) return;
-            setDragging(true);
-            setStartX(event.pageX - node.offsetLeft);
-            setScrollLeft(node.scrollLeft);
-          }}
-          onMouseUp={() => setDragging(false)}
-          onMouseLeave={() => setDragging(false)}
-          onMouseMove={(event) => {
-            const node = sliderRef.current;
-            if (!node || !dragging) return;
-            const x = event.pageX - node.offsetLeft;
-            node.scrollLeft = scrollLeft - (x - startX) * 1.5;
-          }}
-        >
-          {testimonials.map((testimonial) => (
-            <div key={testimonial.name} className="testimonial-card">
-              <Quote className="testimonial-quote" />
-              <p className="testimonial-copy">"{testimonial.quote}"</p>
-              <div className="testimonial-meta">
-                <div className="testimonial-user">
-                  <div className="avatar">{testimonial.name[0]}</div>
-                  <div>
-                    <p className="testimonial-name">{testimonial.name}</p>
-                    <p className="testimonial-role">
-                      {testimonial.role} · {testimonial.company}
-                    </p>
+        <div className="testimonial-carousel">
+          <button
+            type="button"
+            className="testimonial-arrow"
+            aria-label="Show previous testimonial"
+            onClick={() => handleTestimonialChange(-1)}
+          >
+            <ChevronLeft />
+          </button>
+          <div className="testimonial-viewport" aria-live="polite">
+            <div
+              className={`testimonial-strip${isTestimonialAnimating && !isTestimonialResetting ? ' is-animating' : ''}${isTestimonialResetting ? ' is-resetting' : ''}`}
+              style={{ transform: getTestimonialTransform() }}
+              // onTransitionEnd={finishTestimonialAnimation}
+              onTransitionEnd={(e) => {
+                if (e.target !== e.currentTarget) return;
+                finishTestimonialAnimation();
+              }}
+            >
+              {renderedTestimonials.map((testimonial, index) => (
+                <div
+                  // key={`${testimonial.name}-${testimonial.carouselIndex}-${testimonial.offset}`}
+                  key={testimonial.name + testimonial.company}
+                  className={`testimonial-card testimonial-card-${getVisualSlot(index)}`}
+                >
+                  <Quote className="testimonial-quote" />
+                  <p className="testimonial-copy">"{testimonial.quote}"</p>
+                  <div className="testimonial-meta">
+                    <div className="testimonial-user">
+                      <div className="avatar">{testimonial.name[0]}</div>
+                      <div>
+                        <p className="testimonial-name">{testimonial.name}</p>
+                        <p className="testimonial-role">
+                          {testimonial.role} · {testimonial.company}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="hike-badge">↑{testimonial.hike}</span>
                   </div>
                 </div>
-                <span className="hike-badge">↑{testimonial.hike}</span>
-              </div>
+              ))}
             </div>
-          ))}
+          </div>
+          <button
+            type="button"
+            className="testimonial-arrow"
+            aria-label="Show next testimonial"
+            onClick={() => handleTestimonialChange(1)}
+          >
+            <ChevronRight />
+          </button>
         </div>
       </section>
     </main>
