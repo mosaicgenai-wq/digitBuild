@@ -48,7 +48,7 @@ export default function ContactPage() {
       <section className="section-padding">
         <div className="container-custom">
           <Reveal>
-            <SectionEyebrow>Contact</SectionEyebrow>
+            <SectionEyebrow>Contact Us</SectionEyebrow>
             <h1 className="page-hero-title mb-12">
               Let's <span className="page-hero-muted">talk</span>
             </h1>

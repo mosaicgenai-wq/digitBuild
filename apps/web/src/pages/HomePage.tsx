@@ -20,7 +20,7 @@ const aboutCards = [
 ];
 
 const services = [
-  { icon: GraduationCap, title: 'Career Support', desc: 'Resume, profile, interview, and hiring guidance', to: '#career-support' },
+  { icon: GraduationCap, title: 'Career Support', desc: 'Resume, profile, interview, and hiring guidance', to: '/#career-support' },
   { icon: GraduationCap, title: 'Courses', desc: '8 industry-aligned programs', to: '/courses' },
   { icon: Laptop, title: 'Tech Solutions', desc: 'Web, mobile, AI development', to: '/technology-services' },
 ];
@@ -41,6 +41,7 @@ const supportProcess = [
   'Application Strategy',
   'Ongoing Support',
 ];
+const whatsappNumber = '+917385490573';
 
 const reasons = [
   { icon: BookOpen, title: 'Real Curriculum', desc: 'Built by working engineers, not textbook authors.' },
@@ -143,6 +144,10 @@ export default function HomePage() {
     return 'translateX(var(--testimonial-base-offset))';
   };
 
+  const careerSupportWhatsappLink = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+    'Hi DigitBuild, I want to know more about your Career Services & placement support.',
+  )}`;
+
   return (
     <main>
       <section className="hero-section">
@@ -165,7 +170,7 @@ export default function HomePage() {
             <Reveal delay={0.2}>
               <div className="hero-actions">
                 <ButtonLink to="/courses">Browse Courses</ButtonLink>
-                <ButtonLink to="#career-support" variant="pill-outline">
+                <ButtonLink to="/#career-support" variant="pill-outline">
                   Career Support
                 </ButtonLink>
               </div>
@@ -233,7 +238,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="career-support" className="section-padding surface-section">
+      <section id="career-support" className="section-padding surface-section section-anchor">
         <div className="container-custom">
           <Reveal>
             <SectionEyebrow>Services</SectionEyebrow>
@@ -256,6 +261,12 @@ export default function HomePage() {
           </div>
 
           <Reveal delay={0.18}>
+            <div className="support-strip-action support-strip-action-top">
+              <a href={careerSupportWhatsappLink} target="_blank" rel="noreferrer" className="whatsapp-inline-link">
+                <span>WhatsApp</span>
+                <MessageSquare className="inline-link-icon" />
+              </a>
+            </div>
             <div className="support-strip">
               <div>
                 <h3 className="support-strip-title">How the service works</h3>
@@ -287,13 +298,13 @@ export default function HomePage() {
           <div className="card-grid card-grid-3">
             {services.map((service, index) => (
               <Reveal key={service.title} delay={index * 0.06}>
-                <a href={service.to} className="service-card-link">
+                <Link to={service.to} className="service-card-link">
                   <div className="info-card">
                     <service.icon className="info-icon" strokeWidth={1.5} />
                     <h3>{service.title}</h3>
                     <p>{service.desc}</p>
                   </div>
-                </a>
+                </Link>
               </Reveal>
             ))}
           </div>

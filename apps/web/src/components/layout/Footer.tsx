@@ -5,11 +5,15 @@ const footerLinks = {
     { label: 'About', to: '/about' },
     { label: 'Career', to: '/career' },
     { label: 'Blog', to: '/blog' },
-    { label: 'Contact', to: '/contact' },
+    { label: 'Contact Us', to: '/contact' },
   ],
   Learn: [
     { label: 'All Courses', to: '/courses' },
-    { label: 'Tech Solutions', to: '/technology-services' },
+    { label: 'Placement Support', to: '/#career-support' },
+  ],
+  Services: [
+    { label: 'Career Services', to: '/#career-support' },
+    { label: 'Technology Services', to: '/technology-services' },
   ],
 };
 
@@ -20,7 +24,7 @@ export function Footer() {
         <div className="footer-grid">
           <div>
             <NavLink to="/" className="brand footer-brand">
-              digit<span>build</span>
+              Digit<span>Build</span>
             </NavLink>
             <p className="footer-copy">Career-focused tech education &amp; IT solutions from Pune, India.</p>
           </div>
@@ -42,7 +46,7 @@ export function Footer() {
         </div>
 
         <div className="footer-bottom">
-          <p>© 2026 DigitBuild. All rights reserved.</p>
+          <p>{String.fromCharCode(169)} 2026 DigitBuild. All rights reserved.</p>
         </div>
       </div>
     </footer>

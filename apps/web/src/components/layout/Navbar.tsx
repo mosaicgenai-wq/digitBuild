@@ -7,10 +7,10 @@ import { ButtonLink } from '../ui/Button';
 const links = [
   { label: 'Home', to: '/' },
   { label: 'Courses', to: '/courses' },
-  { label: 'Services', to: '/technology-services' },
+  { label: 'Services', to: '/#career-support' },
   { label: 'Technology', to: '/technology-services' },
   { label: 'About', to: '/about' },
-  { label: 'Contact', to: '/contact' },
+  { label: 'Contact Us', to: '/contact' },
   { label: 'Career', to: '/career' },
   { label: 'Blog', to: '/blog' },
 ];
@@ -52,7 +52,9 @@ export function Navbar() {
 
           <div className="nav-links desktop-only">
             {links.map((link) => {
-              const active = location.pathname === link.to;
+              const active = link.to.includes('#')
+                ? location.pathname === '/' && location.hash === '#career-support'
+                : location.pathname === link.to;
 
               return (
                 <NavLink key={link.to} to={link.to} className={`nav-link ${active ? 'is-active' : ''}`}>
@@ -69,7 +71,7 @@ export function Navbar() {
             </button>
 
             <div className="desktop-only">
-              <ButtonLink to="/courses" size="sm">
+              <ButtonLink to="/contact" size="sm">
                 Get Started
               </ButtonLink>
             </div>
@@ -94,7 +96,7 @@ export function Navbar() {
                 {link.label}
               </NavLink>
             ))}
-            <ButtonLink to="/courses" size="lg">
+            <ButtonLink to="/contact" size="lg">
               Get Started
             </ButtonLink>
           </motion.div>
