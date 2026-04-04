@@ -7,7 +7,8 @@ import { ButtonLink } from '../ui/Button';
 const links = [
   { label: 'Home', to: '/' },
   { label: 'Courses', to: '/courses' },
-  { label: 'Tech', to: '/technology-services' },
+  { label: 'Services', to: '/technology-services' },
+  { label: 'Technology', to: '/technology-services' },
   { label: 'About', to: '/about' },
   { label: 'Contact', to: '/contact' },
   { label: 'Career', to: '/career' },
@@ -46,7 +47,7 @@ export function Navbar() {
       <nav className={`navbar glass ${isScrolled ? 'navbar-scrolled' : ''}`}>
         <div className="container-custom navbar-inner">
           <NavLink to="/" className="brand">
-            digit<span>build</span>
+            Digit<span>Build</span>
           </NavLink>
 
           <div className="nav-links desktop-only">

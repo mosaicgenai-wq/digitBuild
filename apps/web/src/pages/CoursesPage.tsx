@@ -5,7 +5,7 @@ import { Reveal } from '../components/ui/Reveal';
 import { SectionEyebrow, SectionTitle } from '../components/ui/SectionIntro';
 
 const categories = ['All', 'Development', 'Testing', 'Analytics'];
-const whatsappNumber = '919876543210';
+const whatsappNumber = '+917385490573';
 const courses = [
   { title: 'Full Stack Development', icon: Terminal, cat: 'Development', duration: '6 Months', highlights: ['MERN Stack', 'APIs & Deployment', 'Real Projects'] },
   { title: 'React JS', icon: Atom, cat: 'Development', duration: '3 Months', highlights: ['Hooks & State', 'Next.js Basics', 'Portfolio Build'] },

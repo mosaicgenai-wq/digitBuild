@@ -59,7 +59,7 @@ export default function ContactPage() {
               <div className="contact-details">
                 {[
                   { icon: MapPin, label: 'Address', value: 'Pune, Maharashtra, India' },
-                  { icon: Phone, label: 'Phone', value: '+91 98765 43210' },
+                  { icon: Phone, label: 'Phone', value: '+91 73854 90573' },
                   { icon: Mail, label: 'Email', value: 'hello@digitbuild.com' },
                 ].map((item) => (
                   <div key={item.label} className="contact-item">

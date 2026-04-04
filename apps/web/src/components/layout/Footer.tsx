@@ -42,7 +42,7 @@ export function Footer() {
         </div>
 
         <div className="footer-bottom">
-          <p>© 2025 DigitBuild. All rights reserved.</p>
+          <p>© 2026 DigitBuild. All rights reserved.</p>
         </div>
       </div>
     </footer>
