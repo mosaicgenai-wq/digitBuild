@@ -48,7 +48,7 @@ export default function ContactPage() {
       <section className="section-padding">
         <div className="container-custom">
           <Reveal>
-            <SectionEyebrow>Contact</SectionEyebrow>
+            <SectionEyebrow>Contact Us</SectionEyebrow>
             <h1 className="page-hero-title mb-12">
               Let's <span className="page-hero-muted">talk</span>
             </h1>
@@ -59,7 +59,7 @@ export default function ContactPage() {
               <div className="contact-details">
                 {[
                   { icon: MapPin, label: 'Address', value: 'Pune, Maharashtra, India' },
-                  { icon: Phone, label: 'Phone', value: '+91 98765 43210' },
+                  { icon: Phone, label: 'Phone', value: '+91 73854 90573' },
                   { icon: Mail, label: 'Email', value: 'hello@digitbuild.com' },
                 ].map((item) => (
                   <div key={item.label} className="contact-item">
