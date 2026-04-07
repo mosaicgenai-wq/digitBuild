@@ -6,13 +6,13 @@ import { ButtonLink } from '../ui/Button';
 
 const links = [
   { label: 'Home', to: '/' },
+  { label: 'Services', to: '/#services' },
+  { label: 'Placement Support', to: '/#career-support' },
   { label: 'Courses', to: '/courses' },
-  { label: 'Services', to: '/#career-support' },
-  { label: 'Technology', to: '/technology-services' },
-  { label: 'About', to: '/about' },
+  { label: 'Blog', to: '/blog' },
+  { label: 'About Us', to: '/about' },
   { label: 'Contact Us', to: '/contact' },
   { label: 'Career', to: '/career' },
-  { label: 'Blog', to: '/blog' },
 ];
 
 export function Navbar() {
@@ -32,7 +32,7 @@ export function Navbar() {
 
   useEffect(() => {
     setIsOpen(false);
-  }, [location.pathname]);
+  }, [location.pathname, location.hash]);
 
   function toggleTheme() {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
@@ -40,6 +40,15 @@ export function Navbar() {
     document.documentElement.classList.add(nextTheme);
     localStorage.setItem('theme', nextTheme);
     setTheme(nextTheme);
+  }
+
+  function isLinkActive(to: string) {
+    if (to.includes('#')) {
+      const [pathname, hash] = to.split('#');
+      return location.pathname === (pathname || '/') && location.hash === `#${hash}`;
+    }
+
+    return location.pathname === to;
   }
 
   return (
@@ -52,9 +61,7 @@ export function Navbar() {
 
           <div className="nav-links desktop-only">
             {links.map((link) => {
-              const active = link.to.includes('#')
-                ? location.pathname === '/' && location.hash === '#career-support'
-                : location.pathname === link.to;
+              const active = isLinkActive(link.to);
 
               return (
                 <NavLink key={link.to} to={link.to} className={`nav-link ${active ? 'is-active' : ''}`}>
@@ -105,3 +112,4 @@ export function Navbar() {
     </>
   );
 }
+

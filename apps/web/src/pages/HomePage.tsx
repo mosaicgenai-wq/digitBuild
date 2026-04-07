@@ -1,64 +1,196 @@
-import { BookOpen, Briefcase, ChevronLeft, ChevronRight, FileCheck, FileText, Globe, GraduationCap, Laptop, Linkedin, MessageSquare, Quote, Settings, Shield, Users } from 'lucide-react';
+import {
+  BookOpen,
+  Briefcase,
+  ChevronLeft,
+  ChevronRight,
+  FileCheck,
+  FileText,
+  Globe,
+  GraduationCap,
+  Laptop,
+  Linkedin,
+  MessageSquare,
+  Quote,
+  Shield,
+  Sparkles,
+  Target,
+  Users,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ButtonLink } from '../components/ui/Button';
 import { Counter } from '../components/ui/Counter';
 import { Reveal } from '../components/ui/Reveal';
 import { SectionEyebrow, SectionTitle } from '../components/ui/SectionIntro';
-import { ButtonLink } from '../components/ui/Button';
 
 const stats = [
-  { value: 1000, suffix: '+', label: 'Students Trained' },
-  { value: 8, suffix: '+', label: 'Courses Offered' },
-  { value: 900, suffix: '+', label: 'Classes Delivered' },
-  { value: 99, suffix: '%', label: 'Positive Learning Outcome' },
+  { value: 3500, suffix: '+', label: 'Resumes Written' },
+  { value: 1000, suffix: '+', label: 'LinkedIn Profiles Optimized' },
+  { value: 70, suffix: '%+', label: 'Interview Conversion' },
+  { value: 98, suffix: '%', label: 'Candidates Placed' },
+  { value: 15, suffix: '+', label: 'Clients Served' },
 ];
 
 const aboutCards = [
-  { icon: Users, title: 'Who We Are', desc: 'Educators and engineers from Pune with 7+ years of real-world experience.' },
-  { icon: Users, title: 'Our Goal', desc: 'Get you job-ready. We measure success by placements, not enrollments.' },
-  { icon: Users, title: 'Our Mission', desc: 'Make quality tech education practical, accessible, and outcome-driven.' },
+  {
+    icon: Users,
+    title: 'Who we are?',
+    desc: 'We are tech educators and placement experts dedicated to turning learners into industry-ready professionals.',
+  },
+  {
+    icon: Target,
+    title: 'Our Goal',
+    desc: 'To bridge the gap between education and employment by making quality tech training and job placement accessible to everyone.',
+  },
+  {
+    icon: Sparkles,
+    title: 'Our Mission',
+    desc: 'To be the career partner we wish we had - guiding every learner from first skill to first salary.',
+  },
 ];
 
 const services = [
-  { icon: GraduationCap, title: 'Career Support', desc: 'Resume, profile, interview, and hiring guidance', to: '/#career-support' },
-  { icon: GraduationCap, title: 'Courses', desc: '8 industry-aligned programs', to: '/courses' },
-  { icon: Laptop, title: 'Tech Solutions', desc: 'Web, mobile, AI development', to: '/technology-services' },
+  {
+    icon: GraduationCap,
+    title: 'Industry-Aligned Courses',
+    desc: 'Structured programs built around practical curriculum, live projects, and job-ready timelines.',
+    to: '/courses',
+  },
+  {
+    icon: Briefcase,
+    title: 'Placement Support',
+    desc: 'Resume, LinkedIn, job-application strategy, interview preparation, and profile positioning support.',
+    to: '/#career-support',
+  },
+  {
+    icon: Laptop,
+    title: 'Software Solutions',
+    desc: 'Real-world web, mobile, and digital product services delivered by an execution-focused tech team.',
+    to: '/technology-services',
+  },
 ];
 
 const careerOfferings = [
-  { icon: FileText, title: 'ATS Resume Writing', desc: 'Resumes structured to pass screening tools and get shortlisted faster.' },
-  { icon: Globe, title: 'Naukri Optimization', desc: "Sharper positioning for India's largest job marketplace." },
-  { icon: Linkedin, title: 'LinkedIn Optimization', desc: 'Profiles designed to attract recruiters and hiring managers.' },
-  { icon: Briefcase, title: 'Remote Job Help', desc: 'Guidance for international, hybrid, and remote-friendly roles.' },
-  { icon: Settings, title: 'Role-Based Profiles', desc: 'Tailored messaging for the exact role you are targeting.' },
-  { icon: MessageSquare, title: '1-on-1 Consultation', desc: 'Personalized feedback on your readiness, positioning, and next steps.' },
+  {
+    icon: FileText,
+    title: 'ATS Resume Writing',
+    desc: 'Rank Higher on Naukri. Get More Recruiter Calls. Land Your Dream Job Faster.',
+  },
+  {
+    icon: Globe,
+    title: 'Naukri Profile Optimization',
+    desc: 'Boost visibility with keyword-rich positioning that helps your profile surface in more recruiter searches.',
+  },
+  {
+    icon: Linkedin,
+    title: 'LinkedIn Optimization',
+    desc: "Get Discovered. Build Authority. Attract Recruiters - on the world's #1 professional network.",
+  },
+  {
+    icon: Briefcase,
+    title: 'Remote Job Placement Support',
+    desc: 'Your dream remote job is out there - we help you find it, apply for it, and land it.',
+  },
+  {
+    icon: Users,
+    title: 'Career Switching Guidance',
+    desc: 'Ready for a career change? We map your path, build your profile, and help you switch industries confidently.',
+  },
+  {
+    icon: GraduationCap,
+    title: 'Fresher Launch Package',
+    desc: "Just graduated? Don't just apply - launch your career the right way and get noticed by top recruiters from day one.",
+  },
+  {
+    icon: Globe,
+    title: 'International Resume Writing',
+    desc: 'Go global with a world-class resume crafted to match international standards and hiring expectations abroad.',
+  },
+  {
+    icon: FileCheck,
+    title: 'Tailored Resume Writing',
+    desc: 'Personalized. Targeted. Powerful - a resume written specifically for you, your role, and your industry.',
+  },
+  {
+    icon: BookOpen,
+    title: 'Internship and Training',
+    desc: 'Launch your internship journey right with a professionally crafted resume and profile that gets you selected for the best training opportunities.',
+  },
 ];
-
-const supportProcess = [
-  'Profile Audit',
-  'Resume & LinkedIn Revamp',
-  'Interview Prep',
-  'Application Strategy',
-  'Ongoing Support',
-];
-const whatsappNumber = '+917385490573';
 
 const reasons = [
-  { icon: BookOpen, title: 'Real Curriculum', desc: 'Built by working engineers, not textbook authors.' },
-  { icon: Users, title: 'Active Mentors', desc: 'Learn from people currently in the industry.' },
-  { icon: GraduationCap, title: 'Placement First', desc: 'Dedicated team focused on your career.' },
-  { icon: Laptop, title: 'Live Projects', desc: 'Build real products, not dummy exercises.' },
-  { icon: FileCheck, title: 'ATS-Ready Profiles', desc: 'Resumes that pass automated screening.' },
-  { icon: Shield, title: 'Full Support', desc: 'From enrollment to your first job offer.' },
+  {
+    icon: BookOpen,
+    title: 'Expert-Built Curriculum',
+    desc: "Courses designed by industry professionals - not academics. Learn what's actually used in the real world.",
+  },
+  {
+    icon: Users,
+    title: 'Mentorship by Practitioners',
+    desc: 'Get 1-on-1 guidance from mentors actively working in top companies - not just teaching from textbooks.',
+  },
+  {
+    icon: Laptop,
+    title: 'Live Project Experience',
+    desc: 'Build portfolio-worthy products from day one. Hands-on projects that solve real problems - not dummy exercises.',
+  },
+  {
+    icon: FileCheck,
+    title: 'ATS-Optimised Resume',
+    desc: 'Get a professionally crafted resume that clears automated screening systems and lands you more interviews.',
+  },
+  {
+    icon: GraduationCap,
+    title: 'Placement-First Approach',
+    desc: 'A dedicated placement team works alongside you - from interview prep to offer negotiation - until you land the job.',
+  },
+  {
+    icon: Shield,
+    title: 'End-to-End Support',
+    desc: "From the moment you enrol to your first job offer - we're with you every step with full career and technical support.",
+  },
 ];
 
 const testimonials = [
-  { name: 'Priya S.', role: 'Frontend Dev', company: 'TCS', hike: '60%', quote: 'The mentorship was world-class. I felt genuinely prepared.' },
-  { name: 'Rahul P.', role: 'Full Stack Dev', company: 'Infosys', hike: '45%', quote: 'Got placed within 3 weeks of completing. Incredible support.' },
-  { name: 'Sneha K.', role: 'Data Analyst', company: 'Wipro', hike: '55%', quote: 'All practical, no fluff. Exactly what the industry needs.' },
-  { name: 'Amit D.', role: 'SDE', company: 'Accenture', hike: '70%', quote: 'From zero coding to a top MNC — DigitBuild made it real.' },
-  { name: 'Kavita J.', role: 'QA Engineer', company: 'Persistent', hike: '50%', quote: 'Mock interviews were invaluable. I walked in confident.' },
+  {
+    name: 'Aarav Mehta',
+    role: 'Frontend Developer',
+    company: 'TCS',
+    hike: '65%',
+    quote: 'The mentors corrected my resume, my interview answers, and even my confidence level. I got calls within days.',
+  },
+  {
+    name: 'Neha Kulkarni',
+    role: 'QA Engineer',
+    company: 'Infosys',
+    hike: '48%',
+    quote: 'DigitBuild made the process simple. My LinkedIn, Naukri profile, and interview prep all worked together.',
+  },
+  {
+    name: 'Rohit Sharma',
+    role: 'Data Analyst',
+    company: 'Wipro',
+    hike: '54%',
+    quote: 'I came in as a fresher and left with a complete launch plan. The support felt personal and practical.',
+  },
+  {
+    name: 'Sneha Patil',
+    role: 'Full Stack Developer',
+    company: 'Accenture',
+    hike: '72%',
+    quote: 'The projects helped me speak with confidence, and the placement team helped me convert interviews into an offer.',
+  },
+  {
+    name: 'Vikram Joshi',
+    role: 'Software Engineer',
+    company: 'Capgemini',
+    hike: '58%',
+    quote: 'Their placement-first approach is real. They stayed with me until I accepted the offer.',
+  },
 ];
+
+const placedCompanies = ['TCS', 'Infosys', 'Wipro', 'Accenture', 'Capgemini', 'Cognizant', 'Tech Mahindra', 'Persistent'];
+const whatsappNumber = '+917385490573';
 
 export default function HomePage() {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -93,22 +225,16 @@ export default function HomePage() {
     };
   });
 
-  // const getVisualSlot = (index: number): 'far-prev' | 'prev' | 'active' | 'next' | 'far-next' => {
-  //   return ['far-prev', 'prev', 'active', 'next', 'far-next'][index] as 'far-prev' | 'prev' | 'active' | 'next' | 'far-next';
-  // };
-
   const getVisualSlot = (index: number) => {
     if (!isTestimonialAnimating) {
       return ['far-prev', 'prev', 'active', 'next', 'far-next'][index];
     }
 
     if (testimonialDirection === 1) {
-      // shifting left → next becomes active DURING animation
       return ['far-prev', 'prev', 'next', 'active', 'far-next'][index];
     }
 
     if (testimonialDirection === -1) {
-      // shifting right → prev becomes active DURING animation
       return ['far-prev', 'active', 'prev', 'next', 'far-next'][index];
     }
 
@@ -145,7 +271,7 @@ export default function HomePage() {
   };
 
   const careerSupportWhatsappLink = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-    'Hi DigitBuild, I want to know more about your Career Services & placement support.',
+    'Hi DigitBuild, I want to know more about your placement support services.',
   )}`;
 
   return (
@@ -155,23 +281,23 @@ export default function HomePage() {
           <div>
             <Reveal>
               <h1 className="hero-title">
-                <span className="hero-title-muted">Learn skills.</span>
+                <span className="hero-title-muted">Learn Skills.</span>
                 <br />
                 <span>
-                  Land your dream job<span className="text-primary">.</span>
+                  Build Products. Get Placed<span className="text-primary">.</span>
                 </span>
               </h1>
             </Reveal>
             <Reveal delay={0.1}>
               <p className="hero-copy">
-                Industry-aligned courses, hands-on mentorship, and dedicated placement support — all in one place.
+                Industry-aligned courses, guaranteed placement support, and real-world software solutions - all under one roof.
               </p>
             </Reveal>
             <Reveal delay={0.2}>
               <div className="hero-actions">
                 <ButtonLink to="/courses">Browse Courses</ButtonLink>
                 <ButtonLink to="/#career-support" variant="pill-outline">
-                  Career Support
+                  Job Placement Support
                 </ButtonLink>
               </div>
             </Reveal>
@@ -192,29 +318,19 @@ export default function HomePage() {
                     <span className="code-keyword">const</span> you = {'{'}
                   </p>
                   <p className="code-indent">
-                    skills: <span className="code-accent">"growing"</span>,
+                    skills: <span className="code-accent">"industry-ready"</span>,
                   </p>
                   <p className="code-indent">
-                    hired: <span className="code-accent">true</span>,
+                    products: <span className="code-accent">"shipping"</span>,
+                  </p>
+                  <p className="code-indent">
+                    placed: <span className="code-accent">true</span>,
                   </p>
                   <p>{'}'}</p>
                 </div>
               </div>
             </div>
           </Reveal>
-        </div>
-      </section>
-
-      <section className="stats-band">
-        <div className="container-custom">
-          <div className="stats-grid">
-            {stats.map((stat) => (
-              <div key={stat.label} className="stat-card">
-                <Counter target={stat.value} suffix={stat.suffix} />
-                <p>{stat.label}</p>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -238,62 +354,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="career-support" className="section-padding surface-section section-anchor">
+      <section id="services" className="section-padding surface-section section-anchor">
         <div className="container-custom">
           <Reveal>
             <SectionEyebrow>Services</SectionEyebrow>
-            <SectionTitle className="mb-3">Career Services & placement support</SectionTitle>
-            <p className="page-hero-copy left-copy">
-              We do not just teach. We help candidates become interview-ready with stronger resumes, better LinkedIn positioning, smarter application strategy, and practical hiring support.
-            </p>
-          </Reveal>
-
-          <div className="card-grid card-grid-3">
-            {careerOfferings.map((item, index) => (
-              <Reveal key={item.title} delay={index * 0.06}>
-                <div className="info-card">
-                  <item.icon className="info-icon" strokeWidth={1.5} />
-                  <h3>{item.title}</h3>
-                  <p>{item.desc}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-
-          <Reveal delay={0.18}>
-            <div className="support-strip-action support-strip-action-top">
-              <a href={careerSupportWhatsappLink} target="_blank" rel="noreferrer" className="whatsapp-inline-link">
-                <span>WhatsApp</span>
-                <MessageSquare className="inline-link-icon" />
-              </a>
-            </div>
-            <div className="support-strip">
-              <div>
-                <h3 className="support-strip-title">How the service works</h3>
-                <p className="support-strip-copy">
-                  We start with your current profile, identify gaps, improve positioning, prepare you for interviews, and support your applications with a realistic action plan.
-                </p>
-              </div>
-              <div className="support-steps-marquee">
-                <div className="support-steps-track">
-                  {[...supportProcess, ...supportProcess].map((step, index) => (
-                    <div key={`${step}-${index}`} className="support-step">
-                      <span className="support-step-index">{(index % supportProcess.length) + 1}</span>
-                      <span>{step}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      <section className="section-padding surface-section">
-        <div className="container-custom">
-          <Reveal>
-            <SectionEyebrow>Services</SectionEyebrow>
-            <SectionTitle className="mb-12">Everything you need to succeed</SectionTitle>
+            <SectionTitle className="mb-12">Everything you need under one roof</SectionTitle>
           </Reveal>
           <div className="card-grid card-grid-3">
             {services.map((service, index) => (
@@ -311,25 +376,47 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="section-padding">
+      <section id="career-support" className="section-padding section-anchor">
         <div className="container-custom">
           <Reveal>
-            <SectionEyebrow>Why DigitBuild</SectionEyebrow>
-            <SectionTitle className="mb-12">Built for outcomes</SectionTitle>
+            <SectionEyebrow>Placement Support</SectionEyebrow>
+            <SectionTitle className="mb-3">Placement support that goes beyond advice</SectionTitle>
+            <p className="page-hero-copy left-copy">
+              We create ATS-friendly resumes designed to pass applicant tracking systems and reach hiring managers, helping you stand out in today&apos;s competitive job market. Our experts also optimize your Naukri, LinkedIn, and other profiles with the right keywords and positioning to boost visibility, increase calls, and secure more interview opportunities faster.
+            </p>
           </Reveal>
+
           <div className="card-grid card-grid-3">
-            {reasons.map((item, index) => (
+            {careerOfferings.map((item, index) => (
               <Reveal key={item.title} delay={index * 0.06}>
-                <div className="reason-item">
-                  <div className="reason-icon-wrap">
-                    <item.icon className="reason-icon" strokeWidth={1.5} />
-                  </div>
-                  <div>
-                    <h3>{item.title}</h3>
-                    <p>{item.desc}</p>
-                  </div>
+                <div className="info-card">
+                  <item.icon className="info-icon" strokeWidth={1.5} />
+                  <h3>{item.title}</h3>
+                  <p>{item.desc}</p>
                 </div>
               </Reveal>
+            ))}
+          </div>
+
+          <Reveal delay={0.18}>
+            <div className="support-strip-action support-strip-action-spaced">
+              <a href={careerSupportWhatsappLink} target="_blank" rel="noreferrer" className="whatsapp-inline-link">
+                <span>WhatsApp</span>
+                <MessageSquare className="inline-link-icon" />
+              </a>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      <section className="stats-band">
+        <div className="container-custom">
+          <div className="stats-grid stats-grid-5">
+            {stats.map((stat) => (
+              <div key={stat.label} className="stat-card">
+                <Counter target={stat.value} suffix={stat.suffix} />
+                <p>{stat.label}</p>
+              </div>
             ))}
           </div>
         </div>
@@ -339,7 +426,7 @@ export default function HomePage() {
         <div className="container-custom mb-12">
           <Reveal>
             <SectionEyebrow>Testimonials</SectionEyebrow>
-            <SectionTitle>What our students say</SectionTitle>
+            <SectionTitle>What our learners say</SectionTitle>
           </Reveal>
         </div>
         <div className="testimonial-carousel">
@@ -355,18 +442,13 @@ export default function HomePage() {
             <div
               className={`testimonial-strip${isTestimonialAnimating && !isTestimonialResetting ? ' is-animating' : ''}${isTestimonialResetting ? ' is-resetting' : ''}`}
               style={{ transform: getTestimonialTransform() }}
-              // onTransitionEnd={finishTestimonialAnimation}
               onTransitionEnd={(e) => {
                 if (e.target !== e.currentTarget) return;
                 finishTestimonialAnimation();
               }}
             >
               {renderedTestimonials.map((testimonial, index) => (
-                <div
-                  // key={`${testimonial.name}-${testimonial.carouselIndex}-${testimonial.offset}`}
-                  key={testimonial.name + testimonial.company}
-                  className={`testimonial-card testimonial-card-${getVisualSlot(index)}`}
-                >
+                <div key={testimonial.name + testimonial.company} className={`testimonial-card testimonial-card-${getVisualSlot(index)}`}>
                   <Quote className="testimonial-quote" />
                   <p className="testimonial-copy">"{testimonial.quote}"</p>
                   <div className="testimonial-meta">
@@ -379,7 +461,7 @@ export default function HomePage() {
                         </p>
                       </div>
                     </div>
-                    <span className="hike-badge">↑{testimonial.hike}</span>
+                    <span className="hike-badge">{testimonial.hike} hike</span>
                   </div>
                 </div>
               ))}
@@ -395,6 +477,45 @@ export default function HomePage() {
           </button>
         </div>
       </section>
+
+      <section className="section-padding">
+        <div className="container-custom">
+          <Reveal>
+            <SectionEyebrow>Placed At</SectionEyebrow>
+            <SectionTitle className="mb-12">Companies where candidates got placed</SectionTitle>
+          </Reveal>
+          <div className="company-marquee">
+            {placedCompanies.map((company, index) => (
+              <Reveal key={company} delay={index * 0.05}>
+                <div className="company-pill">{company}</div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="section-padding">
+        <div className="container-custom">
+          <Reveal>
+            <SectionEyebrow>Why DigitBuild</SectionEyebrow>
+            <SectionTitle className="mb-12">Why learners choose DigitBuild</SectionTitle>
+          </Reveal>
+          <div className="card-grid card-grid-3">
+            {reasons.map((item, index) => (
+              <Reveal key={item.title} delay={index * 0.06}>
+                <div className="info-card">
+                  <item.icon className="info-icon" strokeWidth={1.5} />
+                  <h3>{item.title}</h3>
+                  <p>{item.desc}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
     </main>
   );
 }
+
+
+
