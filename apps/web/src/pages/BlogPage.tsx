@@ -28,7 +28,7 @@ export default function BlogPage() {
   if (selected) {
     return (
       <main className="pt-nav">
-        <section className="section-padding">
+        <section className="section-padding page-hero-section page-hero-blog">
           <div className="container-custom article-wrap">
             <button type="button" onClick={() => setSelected(null)} className="back-link">
               <span className="back-link-icon-wrap">
@@ -54,13 +54,14 @@ export default function BlogPage() {
 
   return (
     <main className="pt-nav">
-      <section className="section-padding">
+      <section className="section-padding page-hero-section page-hero-blog">
         <div className="container-custom">
           <Reveal>
             <SectionEyebrow>Blog</SectionEyebrow>
-            <SectionTitle className="mb-3">Insights &amp; guides</SectionTitle>
+            <SectionTitle as="h1" className="mb-3">Insights &amp; guides</SectionTitle>
             <p className="page-hero-copy left-copy">Tips on careers, tech, and learning.</p>
           </Reveal>
+          <h2 className="sr-only">Latest blog posts</h2>
           <div className="card-grid card-grid-3">
             {posts.map((post, index) => (
               <Reveal key={post.title} delay={index * 0.05}>

@@ -8,11 +8,12 @@ const links = [
   { label: 'Home', to: '/' },
   { label: 'Services', to: '/#services' },
   { label: 'Placement Support', to: '/#career-support' },
+  { label: 'Technology', to: '/technology-services' },
   { label: 'Courses', to: '/courses' },
   { label: 'Blog', to: '/blog' },
   { label: 'About Us', to: '/about' },
-  { label: 'Contact Us', to: '/contact' },
   { label: 'Career', to: '/career' },
+  { label: 'Contact Us', to: '/contact' },
 ];
 
 export function Navbar() {
@@ -112,4 +113,3 @@ export function Navbar() {
     </>
   );
 }
-

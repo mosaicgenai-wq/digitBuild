@@ -45,7 +45,7 @@ export default function ContactPage() {
 
   return (
     <main className="pt-nav">
-      <section className="section-padding">
+      <section className="section-padding page-hero-section page-hero-contact">
         <div className="container-custom">
           <Reveal>
             <SectionEyebrow>Contact Us</SectionEyebrow>
@@ -57,6 +57,7 @@ export default function ContactPage() {
           <div className="contact-grid">
             <Reveal>
               <div className="contact-details">
+                <h2 className="subsection-title">Contact details</h2>
                 {[
                   { icon: MapPin, label: 'Address', value: 'Pune, Maharashtra, India' },
                   { icon: Phone, label: 'Phone', value: '+91 73854 90573' },
@@ -87,6 +88,7 @@ export default function ContactPage() {
 
             <Reveal delay={0.1}>
               <form onSubmit={handleSubmit} className="contact-form">
+                <h2 className="subsection-title">Send us a message</h2>
                 <div>
                   <input className="field" type="text" placeholder="Name" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
                   {errors.name ? <p className="field-error">{errors.name}</p> : null}

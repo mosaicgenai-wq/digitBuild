@@ -17,7 +17,7 @@ const process = ['Info Collection', 'Resume Draft', 'Review', 'Optimization', 'D
 export default function PlacementServicesPage() {
   return (
     <main className="pt-nav">
-      <section className="section-padding">
+      <section className="section-padding page-hero-section page-hero-placement">
         <div className="container-custom narrow-center">
           <Reveal>
             <h1 className="page-hero-title">
@@ -41,7 +41,7 @@ export default function PlacementServicesPage() {
           </Reveal>
           <Reveal delay={0.1}>
             <SectionEyebrow>What is ATS?</SectionEyebrow>
-            <h3 className="subsection-title">Why your resume gets rejected</h3>
+            <h2 className="subsection-title">Why your resume gets rejected</h2>
             <p className="body-copy">
               90% of companies use Applicant Tracking Systems to filter resumes before a human ever sees them. Without proper formatting and keywords, qualified candidates get auto-rejected. We fix that.
             </p>

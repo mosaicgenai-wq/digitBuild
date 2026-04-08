@@ -187,9 +187,314 @@ const testimonials = [
     hike: '58%',
     quote: 'Their placement-first approach is real. They stayed with me until I accepted the offer.',
   },
+  {
+    name: 'Priya Deshmukh',
+    role: 'React Developer',
+    company: 'Cognizant',
+    hike: '61%',
+    quote: 'The mock interviews felt almost identical to the real ones. By the time my final round came, I was ready with sharper answers and much better confidence.',
+  },
+  {
+    name: 'Kunal Verma',
+    role: 'Backend Developer',
+    company: 'HCLTech',
+    hike: '56%',
+    quote: 'My resume was rewritten around actual recruiter expectations. That one change alone increased responses, and the interview coaching helped me convert them.',
+  },
+  {
+    name: 'Ishita Rao',
+    role: 'Business Analyst',
+    company: 'Deloitte',
+    hike: '44%',
+    quote: 'I was struggling to explain my projects in a business-friendly way. DigitBuild helped me position my work properly and that made a huge difference.',
+  },
+  {
+    name: 'Harsh Vyas',
+    role: 'QA Automation Engineer',
+    company: 'Tech Mahindra',
+    hike: '52%',
+    quote: 'They didn’t just teach testing tools. They helped me structure my profile, improve my project stories, and apply strategically to the right roles.',
+  },
+  {
+    name: 'Mitali Shah',
+    role: 'Data Analyst',
+    company: 'Infosys BPM',
+    hike: '49%',
+    quote: 'The biggest win for me was clarity. I knew exactly how to present my dashboards, what to say in interviews, and how to follow up professionally.',
+  },
+  {
+    name: 'Nikhil Bhosale',
+    role: 'Full Stack Developer',
+    company: 'LTIMindtree',
+    hike: '68%',
+    quote: 'From portfolio feedback to final HR negotiation, the support never dropped. I felt like someone was genuinely tracking my progress throughout.',
+  },
+  {
+    name: 'Rutuja More',
+    role: 'Software Test Engineer',
+    company: 'Wipro',
+    hike: '46%',
+    quote: 'My Naukri profile barely got noticed before. After optimization and resume updates, I started receiving calls from companies I had been targeting for months.',
+  },
+  {
+    name: 'Abhishek Nair',
+    role: 'Power BI Developer',
+    company: 'Accenture',
+    hike: '57%',
+    quote: 'The guidance was practical and direct. Every review call had specific improvements I could act on immediately, which made the process much faster.',
+  },
+  {
+    name: 'Sakshi Jain',
+    role: 'Junior Data Scientist',
+    company: 'IBM',
+    hike: '63%',
+    quote: 'I had technical knowledge but weak storytelling. They helped me explain my projects in a way that showed impact, not just tools used.',
+  },
+  {
+    name: 'Aditya Kulkarni',
+    role: 'Java Developer',
+    company: 'Capgemini',
+    hike: '51%',
+    quote: 'The interview preparation was extremely realistic. We covered coding questions, project discussions, and HR rounds, so nothing felt unfamiliar later.',
+  },
+  {
+    name: 'Pooja Singh',
+    role: 'Operations Analyst',
+    company: 'Genpact',
+    hike: '42%',
+    quote: 'I wanted to switch into a more analytical role and they mapped the transition clearly. The profile positioning they did was spot on.',
+  },
+  {
+    name: 'Manav Arora',
+    role: 'Frontend Engineer',
+    company: 'Persistent',
+    hike: '66%',
+    quote: 'They pushed me to improve my project quality and presentation. That gave me stronger talking points and helped me stand out against other applicants.',
+  },
+  {
+    name: 'Shreya Kulshrestha',
+    role: 'HR Analyst',
+    company: 'EY',
+    hike: '39%',
+    quote: 'The personal attention was the best part. My doubts were never brushed aside, and every suggestion on my profile felt intentional and customized.',
+  },
+  {
+    name: 'Rahul Soni',
+    role: 'Cloud Support Engineer',
+    company: 'Oracle',
+    hike: '54%',
+    quote: 'They helped me frame my support experience into a stronger technical profile. That repositioning changed the kind of interviews I started getting.',
+  },
+  {
+    name: 'Ananya Ghosh',
+    role: 'UI Developer',
+    company: 'Cognizant',
+    hike: '59%',
+    quote: 'The resume and LinkedIn rewrite made my profile look much more mature. Recruiters started seeing me as a serious candidate instead of a fresher.',
+  },
+  {
+    name: 'Siddharth Patil',
+    role: 'DevOps Engineer',
+    company: 'Larsen & Toubro',
+    hike: '62%',
+    quote: 'I liked that the preparation was outcome-focused. We spent time on what employers actually ask, not on random generic advice.',
+  },
+  {
+    name: 'Megha Joshi',
+    role: 'Manual Tester',
+    company: 'Hexaware',
+    hike: '43%',
+    quote: 'My confidence improved because I finally knew how to explain my bug reports, test cases, and project work in a professional way.',
+  },
+  {
+    name: 'Yash Chavan',
+    role: 'Associate Software Engineer',
+    company: 'Tata Elxsi',
+    hike: '47%',
+    quote: 'As a fresher, I needed structure more than anything. DigitBuild gave me a roadmap, regular reviews, and the right pressure to stay consistent.',
+  },
+  {
+    name: 'Komal Agarwal',
+    role: 'SQL Developer',
+    company: 'DXC Technology',
+    hike: '53%',
+    quote: 'Their feedback on small details like keywords, project phrasing, and recruiter communication had a surprisingly big impact on my results.',
+  },
+  {
+    name: 'Amanpreet Kaur',
+    role: 'Product Support Analyst',
+    company: 'Concentrix',
+    hike: '38%',
+    quote: 'I was changing domains and felt stuck. They simplified the transition, strengthened my profile, and kept me focused through the whole application cycle.',
+  },
+  {
+    name: 'Devansh Tripathi',
+    role: 'Python Developer',
+    company: 'Infosys',
+    hike: '55%',
+    quote: 'The best part was how practical everything was. Every call ended with exact improvements and those changes started showing results quickly.',
+  },
+  {
+    name: 'Nandini Iyer',
+    role: 'Reporting Analyst',
+    company: 'KPMG',
+    hike: '45%',
+    quote: 'They helped me turn my raw experience into a cleaner professional narrative. That made me far more confident while speaking to recruiters.',
+  },
+  {
+    name: 'Rakesh Yadav',
+    role: 'Mobile App Developer',
+    company: 'Tech Mahindra',
+    hike: '64%',
+    quote: 'The combination of project review, interview prep, and job application guidance worked really well. I had support at each stage, not just one.',
+  },
+  {
+    name: 'Simran Bedi',
+    role: 'Data Operations Specialist',
+    company: 'Sutherland',
+    hike: '41%',
+    quote: 'I felt more organized within the first week itself. My resume, profile, and application strategy were finally aligned instead of scattered.',
+  },
+  {
+    name: 'Varun Malhotra',
+    role: 'Software Developer',
+    company: 'Zensar',
+    hike: '58%',
+    quote: 'They helped me present my previous experience as relevant instead of outdated. That one shift changed how interviewers responded to my profile.',
+  },
+  {
+    name: 'Deepa Narayanan',
+    role: 'Business Intelligence Analyst',
+    company: 'Mu Sigma',
+    hike: '50%',
+    quote: 'The support felt both honest and motivating. They pointed out exactly what was weak in my profile, and then helped me fix it properly.',
+  },
 ];
 
-const placedCompanies = ['TCS', 'Infosys', 'Wipro', 'Accenture', 'Capgemini', 'Cognizant', 'Tech Mahindra', 'Persistent'];
+const placedCompanies = [
+  'TCS',
+  'Infosys',
+  'Wipro',
+  'Accenture',
+  'Capgemini',
+  'Cognizant',
+  'Tech Mahindra',
+  'Persistent',
+  'HCLTech',
+  'IBM',
+  'Oracle',
+  'Deloitte',
+  'EY',
+  'KPMG',
+  'PwC',
+  'LTIMindtree',
+  'Mphasis',
+  'DXC Technology',
+  'Hexaware',
+  'L&T Technology Services',
+  'Larsen & Toubro',
+  'Tata Elxsi',
+  'Birlasoft',
+  'Zensar',
+  'Cybage',
+  'Amdocs',
+  'Synechron',
+  'Virtusa',
+  'Atos',
+  'Fujitsu',
+  'NTT DATA',
+  'Sopra Steria',
+  'Nagarro',
+  'EPAM',
+  'UST',
+  'Thoughtworks',
+  'Publicis Sapient',
+  'GlobalLogic',
+  'Coforge',
+  'KPIT',
+  'Sasken',
+  'Quest Global',
+  'Honeywell',
+  'Siemens',
+  'Bosch',
+  'Schneider Electric',
+  'Emerson',
+  'Philips',
+  'Airtel',
+  'Jio',
+  'Vodafone Idea',
+  'Amazon',
+  'Amazon Web Services',
+  'Google',
+  'Microsoft',
+  'Meta',
+  'Apple',
+  'Netflix',
+  'Adobe',
+  'Salesforce',
+  'SAP',
+  'ServiceNow',
+  'Zoho',
+  'Freshworks',
+  'Intuit',
+  'PayPal',
+  'Visa',
+  'Mastercard',
+  'American Express',
+  'JPMorgan Chase',
+  'Morgan Stanley',
+  'Goldman Sachs',
+  'Barclays',
+  'HSBC',
+  'Standard Chartered',
+  'UBS',
+  'Deutsche Bank',
+  'BNY Mellon',
+  'Northern Trust',
+  'State Street',
+  'Bank of America',
+  'Wells Fargo',
+  'Citi',
+  'Nomura',
+  'Morningstar',
+  'NielsenIQ',
+  'Mu Sigma',
+  'Fractal Analytics',
+  'Tiger Analytics',
+  'Genpact',
+  'EXL',
+  'Concentrix',
+  'Sutherland',
+  'Teleperformance',
+  'CGI',
+  'Collabera',
+  'Randstad Digital',
+  'Adecco',
+  'Alight Solutions',
+  'Cerner',
+  'Dassault Systemes',
+  'Autodesk',
+  'Infor',
+  'Workday',
+  'OpenText',
+  'Red Hat',
+  'VMware',
+  'Cisco',
+  'Juniper Networks',
+  'Dell Technologies',
+  'HP',
+  'Lenovo',
+  'Xoriant',
+  'eClerx',
+  'Capco',
+  'Brillio',
+  'Datamatics',
+  'R Systems',
+  'Newgen Software',
+  'Mindtree',
+  'Apexon',
+];
+const placedCompaniesMarquee = [...placedCompanies, ...placedCompanies];
 const whatsappNumber = '+917385490573';
 
 export default function HomePage() {
@@ -270,9 +575,10 @@ export default function HomePage() {
     return 'translateX(var(--testimonial-base-offset))';
   };
 
-  const careerSupportWhatsappLink = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-    'Hi DigitBuild, I want to know more about your placement support services.',
-  )}`;
+  function getCareerSupportWhatsappLink(offeringTitle: string) {
+    const message = `Hi DigitBuild, I want to know more about your ${offeringTitle} service.`;
+    return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+  }
 
   return (
     <main>
@@ -336,7 +642,7 @@ export default function HomePage() {
 
       <section className="section-padding">
         <div className="container-custom">
-          <Reveal>
+          <Reveal className="home-section-intro">
             <SectionEyebrow>About</SectionEyebrow>
             <SectionTitle className="mb-12">What makes us different</SectionTitle>
           </Reveal>
@@ -356,7 +662,7 @@ export default function HomePage() {
 
       <section id="services" className="section-padding surface-section section-anchor">
         <div className="container-custom">
-          <Reveal>
+          <Reveal className="home-section-intro">
             <SectionEyebrow>Services</SectionEyebrow>
             <SectionTitle className="mb-12">Everything you need under one roof</SectionTitle>
           </Reveal>
@@ -378,10 +684,10 @@ export default function HomePage() {
 
       <section id="career-support" className="section-padding section-anchor">
         <div className="container-custom">
-          <Reveal>
+          <Reveal className="home-section-intro">
             <SectionEyebrow>Placement Support</SectionEyebrow>
             <SectionTitle className="mb-3">Placement support that goes beyond advice</SectionTitle>
-            <p className="page-hero-copy left-copy">
+            <p className="page-hero-copy">
               We create ATS-friendly resumes designed to pass applicant tracking systems and reach hiring managers, helping you stand out in today&apos;s competitive job market. Our experts also optimize your Naukri, LinkedIn, and other profiles with the right keywords and positioning to boost visibility, increase calls, and secure more interview opportunities faster.
             </p>
           </Reveal>
@@ -389,23 +695,18 @@ export default function HomePage() {
           <div className="card-grid card-grid-3">
             {careerOfferings.map((item, index) => (
               <Reveal key={item.title} delay={index * 0.06}>
-                <div className="info-card">
+                <div className="info-card info-card-with-action">
                   <item.icon className="info-icon" strokeWidth={1.5} />
                   <h3>{item.title}</h3>
                   <p>{item.desc}</p>
+                  <a href={getCareerSupportWhatsappLink(item.title)} target="_blank" rel="noreferrer" className="whatsapp-link whatsapp-link-card">
+                    <MessageSquare className="inline-link-icon" />
+                    Chat on WhatsApp
+                  </a>
                 </div>
               </Reveal>
             ))}
           </div>
-
-          <Reveal delay={0.18}>
-            <div className="support-strip-action support-strip-action-spaced">
-              <a href={careerSupportWhatsappLink} target="_blank" rel="noreferrer" className="whatsapp-inline-link">
-                <span>WhatsApp</span>
-                <MessageSquare className="inline-link-icon" />
-              </a>
-            </div>
-          </Reveal>
         </div>
       </section>
 
@@ -424,7 +725,7 @@ export default function HomePage() {
 
       <section className="section-padding surface-section overflow-hidden">
         <div className="container-custom mb-12">
-          <Reveal>
+          <Reveal className="home-section-intro">
             <SectionEyebrow>Testimonials</SectionEyebrow>
             <SectionTitle>What our learners say</SectionTitle>
           </Reveal>
@@ -480,23 +781,25 @@ export default function HomePage() {
 
       <section className="section-padding">
         <div className="container-custom">
-          <Reveal>
+          <Reveal className="home-section-intro">
             <SectionEyebrow>Placed At</SectionEyebrow>
             <SectionTitle className="mb-12">Companies where candidates got placed</SectionTitle>
           </Reveal>
           <div className="company-marquee">
-            {placedCompanies.map((company, index) => (
-              <Reveal key={company} delay={index * 0.05}>
-                <div className="company-pill">{company}</div>
-              </Reveal>
-            ))}
+            <div className="company-track">
+              {placedCompaniesMarquee.map((company, index) => (
+                <div key={`${company}-${index}`} className="company-pill">
+                  {company}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
       <section className="section-padding">
         <div className="container-custom">
-          <Reveal>
+          <Reveal className="home-section-intro">
             <SectionEyebrow>Why DigitBuild</SectionEyebrow>
             <SectionTitle className="mb-12">Why learners choose DigitBuild</SectionTitle>
           </Reveal>
@@ -516,6 +819,3 @@ export default function HomePage() {
     </main>
   );
 }
-
-
-

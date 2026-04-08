@@ -1,4 +1,4 @@
-import { Users } from 'lucide-react';
+import { Briefcase, GraduationCap, Sparkles, Target, Users } from 'lucide-react';
 import { Counter } from '../components/ui/Counter';
 import { Reveal } from '../components/ui/Reveal';
 import { SectionEyebrow } from '../components/ui/SectionIntro';
@@ -7,14 +7,26 @@ const sections = [
   {
     title: 'Who We Are',
     desc: "We're a Pune-based team of engineers and educators with 7+ years of industry experience. We've helped 500+ students transition into successful tech careers through practical, hands-on training.",
+    visualClassName: 'about-visual-team',
+    visualTitle: 'Mentors + builders',
+    visualStats: ['Live project guidance', 'Career-first learning', 'Hands-on support'],
+    visualIcon: Users,
   },
   {
     title: 'Our Goal',
     desc: "Make every student job-ready from day one. We don't count enrollments — we count placements. Every decision we make is centered on your career outcome.",
+    visualClassName: 'about-visual-goal',
+    visualTitle: 'Placement outcomes',
+    visualStats: ['Resume to interview strategy', 'Portfolio positioning', 'Recruiter-ready profiles'],
+    visualIcon: Target,
   },
   {
     title: 'Our Mission',
     desc: "Quality tech education shouldn't be exclusive. We make it practical, affordable, and outcome-driven — with support from enrollment through your first job.",
+    visualClassName: 'about-visual-mission',
+    visualTitle: 'From skill to salary',
+    visualStats: ['Structured learning paths', 'Mentorship checkpoints', 'Support beyond the classroom'],
+    visualIcon: Sparkles,
   },
 ];
 
@@ -26,7 +38,7 @@ const stats = [
 export default function AboutPage() {
   return (
     <main className="pt-nav">
-      <section className="section-padding">
+      <section className="section-padding page-hero-section page-hero-about">
         <div className="container-custom narrow-center">
           <Reveal>
             <SectionEyebrow>About Us</SectionEyebrow>
@@ -42,13 +54,39 @@ export default function AboutPage() {
         <section key={section.title} className={`section-padding ${index % 2 === 0 ? 'surface-section' : ''}`}>
           <div className="container-custom split-section">
             <Reveal className={index % 2 !== 0 ? 'order-mobile-last' : ''}>
-              <div className="icon-stage">
-                <Users className="icon-stage-icon" strokeWidth={1} />
+              <div className={`icon-stage about-visual ${section.visualClassName}`}>
+                <div className="about-visual-orb about-visual-orb-one" />
+                <div className="about-visual-orb about-visual-orb-two" />
+                <div className="about-visual-card">
+                  <div className="about-visual-card-top">
+                    <section.visualIcon className="about-visual-icon" strokeWidth={1.5} />
+                    <span className="about-visual-pill">DigitBuild</span>
+                  </div>
+                  <h3 className="about-visual-title">{section.visualTitle}</h3>
+                  <div className="about-visual-list">
+                    {section.visualStats.map((item, itemIndex) => (
+                      <div key={item} className="about-visual-item">
+                        <span className="about-visual-index">0{itemIndex + 1}</span>
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="about-visual-footer">
+                    <div className="about-visual-badge">
+                      <GraduationCap className="about-visual-badge-icon" />
+                      Learner growth
+                    </div>
+                    <div className="about-visual-badge">
+                      <Briefcase className="about-visual-badge-icon" />
+                      Placement focus
+                    </div>
+                  </div>
+                </div>
               </div>
             </Reveal>
             <Reveal delay={0.1} className={index % 2 !== 0 ? 'order-mobile-first' : ''}>
               <SectionEyebrow>{section.title}</SectionEyebrow>
-              <h3 className="subsection-title">{section.title}</h3>
+              <h2 className="subsection-title">{section.title}</h2>
               <p className="body-copy">{section.desc}</p>
             </Reveal>
           </div>

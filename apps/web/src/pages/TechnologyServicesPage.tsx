@@ -1,7 +1,7 @@
 import { ArrowRight, Globe, ShieldCheck, Smartphone } from 'lucide-react';
 import { ButtonLink } from '../components/ui/Button';
 import { Reveal } from '../components/ui/Reveal';
-import { SectionEyebrow } from '../components/ui/SectionIntro';
+import { SectionEyebrow, SectionTitle } from '../components/ui/SectionIntro';
 
 const items = [
   { icon: Globe, title: 'Web Development', desc: 'Modern web apps built for scale. From MVPs to enterprise platforms.' },
@@ -13,7 +13,7 @@ const items = [
 export default function TechnologyServicesPage() {
   return (
     <main className="pt-nav">
-      <section className="section-padding">
+      <section className="section-padding page-hero-section page-hero-technology">
         <div className="container-custom narrow-center">
           <Reveal>
             <SectionEyebrow>Technology</SectionEyebrow>
@@ -27,6 +27,10 @@ export default function TechnologyServicesPage() {
 
       <section className="section-padding surface-section">
         <div className="container-custom">
+          <Reveal>
+            <SectionEyebrow>Capabilities</SectionEyebrow>
+            <SectionTitle className="mb-12">Technology services we deliver</SectionTitle>
+          </Reveal>
           <div className="card-grid card-grid-2">
             {items.map((item, index) => (
               <Reveal key={item.title} delay={index * 0.08}>

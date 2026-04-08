@@ -32,7 +32,7 @@ const process = ['Apply with resume', 'Shortlisting', 'Discussion round', 'Task 
 export default function CareerPage() {
   return (
     <main className="pt-nav">
-      <section className="section-padding">
+      <section className="section-padding page-hero-section page-hero-career">
         <div className="container-custom narrow-center">
           <Reveal>
             <SectionEyebrow>Career</SectionEyebrow>
