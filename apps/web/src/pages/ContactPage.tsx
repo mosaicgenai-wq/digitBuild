@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { Button } from '../components/ui/Button';
 import { Reveal } from '../components/ui/Reveal';
-import { SectionEyebrow } from '../components/ui/SectionIntro';
+import { SectionEyebrow, SectionTitle } from '../components/ui/SectionIntro';
 import { useToast } from '../components/toast/ToastProvider';
 import { submitContactForm, type ContactPayload } from '../lib/api';
 
@@ -58,7 +58,7 @@ export default function ContactPage() {
           <div className="contact-grid">
             <Reveal>
               <div className="contact-details">
-                <h2 className="subsection-title">Contact details</h2>
+                <SectionTitle className="mb-3">Contact details</SectionTitle>
                 {[
                   { icon: MapPin, label: 'Address', value: 'Pune, Maharashtra, India' },
                   { icon: Phone, label: 'Phone', value: '+91 73854 90573' },
@@ -89,7 +89,7 @@ export default function ContactPage() {
 
             <Reveal delay={0.1}>
               <form onSubmit={handleSubmit} className="contact-form">
-                <h2 className="subsection-title">Send us a message</h2>
+                <SectionTitle className="mb-3">Send us a message</SectionTitle>
                 <div>
                   <input className="field" type="text" placeholder="Name" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
                   {errors.name ? <p className="field-error">{errors.name}</p> : null}

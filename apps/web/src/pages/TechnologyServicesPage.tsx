@@ -27,7 +27,7 @@ export default function TechnologyServicesPage() {
 
       <section className="section-padding surface-section">
         <div className="container-custom">
-          <Reveal>
+          <Reveal className="home-section-intro">
             <SectionEyebrow>Capabilities</SectionEyebrow>
             <SectionTitle className="mb-12">Technology services we deliver</SectionTitle>
           </Reveal>
@@ -48,7 +48,7 @@ export default function TechnologyServicesPage() {
       <section className="cta-section">
         <div className="container-custom center-text">
           <Reveal>
-            <h2 className="cta-title">Have a project in mind?</h2>
+            <SectionTitle className="mb-3">Have a project in mind?</SectionTitle>
             <ButtonLink to="/contact">
               Let's Talk <ArrowRight className="btn-icon" />
             </ButtonLink>

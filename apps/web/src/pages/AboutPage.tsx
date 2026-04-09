@@ -1,7 +1,7 @@
 import { Briefcase, GraduationCap, Sparkles, Target, Users } from 'lucide-react';
 import { Counter } from '../components/ui/Counter';
 import { Reveal } from '../components/ui/Reveal';
-import { SectionEyebrow } from '../components/ui/SectionIntro';
+import { SectionEyebrow, SectionTitle } from '../components/ui/SectionIntro';
 
 const sections = [
   {
@@ -86,7 +86,7 @@ export default function AboutPage() {
             </Reveal>
             <Reveal delay={0.1} className={index % 2 !== 0 ? 'order-mobile-first' : ''}>
               <SectionEyebrow>{section.title}</SectionEyebrow>
-              <h2 className="subsection-title">{section.title}</h2>
+              <SectionTitle className="mb-3">{section.title}</SectionTitle>
               <p className="body-copy">{section.desc}</p>
             </Reveal>
           </div>

@@ -42,7 +42,7 @@ export default function PlacementServicesPage() {
           </Reveal>
           <Reveal delay={0.1}>
             <SectionEyebrow>What is ATS?</SectionEyebrow>
-            <h2 className="subsection-title">Why your resume gets rejected</h2>
+            <SectionTitle className="mb-3">Why your resume gets rejected</SectionTitle>
             <p className="body-copy">
               90% of companies use Applicant Tracking Systems to filter resumes before a human ever sees them. Without proper formatting and keywords, qualified candidates get auto-rejected. We fix that.
             </p>
@@ -52,7 +52,7 @@ export default function PlacementServicesPage() {
 
       <section className="section-padding">
         <div className="container-custom">
-          <Reveal>
+          <Reveal className="home-section-intro">
             <SectionEyebrow>What We Offer</SectionEyebrow>
             <SectionTitle className="mb-12">Complete career support</SectionTitle>
           </Reveal>
@@ -72,7 +72,7 @@ export default function PlacementServicesPage() {
 
       <section className="section-padding surface-section">
         <div className="container-custom">
-          <Reveal>
+          <Reveal className="home-section-intro">
             <SectionEyebrow>Process</SectionEyebrow>
             <SectionTitle className="mb-12 center-text">How it works</SectionTitle>
           </Reveal>
@@ -98,7 +98,7 @@ export default function PlacementServicesPage() {
       <section className="cta-section">
         <div className="container-custom center-text">
           <Reveal>
-            <h2 className="cta-title">Ready to get more interviews?</h2>
+            <SectionTitle className="mb-3">Ready to get more interviews?</SectionTitle>
             <ButtonLink to="/contact">
               Get Started <ArrowRight className="btn-icon" />
             </ButtonLink>

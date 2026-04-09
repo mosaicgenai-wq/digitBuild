@@ -121,7 +121,7 @@ export default function CareerPage() {
 
       <section className="section-padding surface-section">
         <div className="container-custom">
-          <Reveal>
+          <Reveal className="home-section-intro">
             <SectionEyebrow>Open Roles</SectionEyebrow>
             <SectionTitle className="mb-12">Current and upcoming openings</SectionTitle>
           </Reveal>
@@ -174,7 +174,7 @@ export default function CareerPage() {
 
       <section className="section-padding">
         <div className="container-custom">
-          <Reveal>
+          <Reveal className="home-section-intro">
             <SectionEyebrow>Hiring Flow</SectionEyebrow>
             <SectionTitle className="mb-12">Simple and transparent process</SectionTitle>
           </Reveal>
@@ -195,7 +195,7 @@ export default function CareerPage() {
       <section className="cta-section">
         <div className="container-custom center-text">
           <Reveal>
-            <h2 className="cta-title">Want to be considered for future openings?</h2>
+            <SectionTitle className="mb-3">Want to be considered for future openings?</SectionTitle>
             <ButtonLink to="/contact">
               Connect with us <ArrowRight className="btn-icon" />
             </ButtonLink>

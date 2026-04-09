@@ -738,7 +738,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="section-padding surface-section overflow-hidden">
+      <section className="section-padding overflow-hidden">
         <div className="container-custom mb-12">
           <Reveal className="home-section-intro">
             <SectionEyebrow>Testimonials</SectionEyebrow>
@@ -794,7 +794,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="section-padding">
+      <section className="section-padding surface-section">
         <div className="container-custom">
           <Reveal className="home-section-intro">
             <SectionEyebrow>Placed At</SectionEyebrow>
