@@ -611,28 +611,43 @@ export default function HomePage() {
 
           <Reveal delay={0.15} className="hero-visual-wrap desktop-only-flex">
             <div className="hero-visual">
-              <div className="hero-card hero-card-one" />
-              <div className="hero-card hero-card-two" />
-              <div className="hero-card hero-card-main">
-                <div className="code-window">
-                  <div className="code-dots">
-                    <span className="dot dot-red" />
-                    <span className="dot dot-yellow" />
-                    <span className="dot dot-green" />
+              <div className="hero-glow" />
+              <div className="hero-chip-row hero-chip-row-top">
+                <div className="hero-chip hero-chip-top">
+                  <Sparkles strokeWidth={1.8} />
+                  Placement-first learning
+                </div>
+              </div>
+              <div className="hero-chip-row hero-chip-row-bottom">
+                <div className="hero-chip hero-chip-bottom">
+                  <Shield strokeWidth={1.8} />
+                  Real projects, real support
+                </div>
+              </div>
+              <div className="hero-card-stack">
+                <div className="hero-card hero-card-one" />
+                <div className="hero-card hero-card-two" />
+                <div className="hero-card hero-card-main">
+                  <div className="code-window">
+                    <div className="code-dots">
+                      <span className="dot dot-red" />
+                      <span className="dot dot-yellow" />
+                      <span className="dot dot-green" />
+                    </div>
+                    <p>
+                      <span className="code-keyword">const</span> you = {'{'}
+                    </p>
+                    <p className="code-indent">
+                      skills: <span className="code-accent">"industry-ready"</span>,
+                    </p>
+                    <p className="code-indent">
+                      products: <span className="code-accent">"shipping"</span>,
+                    </p>
+                    <p className="code-indent">
+                      placed: <span className="code-accent">true</span>,
+                    </p>
+                    <p>{'}'}</p>
                   </div>
-                  <p>
-                    <span className="code-keyword">const</span> you = {'{'}
-                  </p>
-                  <p className="code-indent">
-                    skills: <span className="code-accent">"industry-ready"</span>,
-                  </p>
-                  <p className="code-indent">
-                    products: <span className="code-accent">"shipping"</span>,
-                  </p>
-                  <p className="code-indent">
-                    placed: <span className="code-accent">true</span>,
-                  </p>
-                  <p>{'}'}</p>
                 </div>
               </div>
             </div>

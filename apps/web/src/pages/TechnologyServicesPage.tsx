@@ -15,7 +15,7 @@ export default function TechnologyServicesPage() {
     <main className="pt-nav">
       <section className="section-padding page-hero-section page-hero-technology">
         <div className="container-custom narrow-center">
-          <Reveal>
+          <Reveal className="page-hero-intro">
             <SectionEyebrow>Technology</SectionEyebrow>
             <h1 className="page-hero-title">
               <span>Solutions</span> <span className="page-hero-muted">built to scale</span>

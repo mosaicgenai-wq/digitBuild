@@ -135,12 +135,12 @@ export default function CoursesPage() {
     <main className="pt-nav">
       <section className="section-padding page-hero-section page-hero-courses">
         <div className="container-custom">
-          <Reveal>
+          <Reveal className="page-hero-intro">
             <SectionEyebrow>Courses</SectionEyebrow>
             <SectionTitle as="h1" className="mb-3">
               Learn what the industry <span className="hero-title-muted">actually needs</span>
             </SectionTitle>
-            <p className="page-hero-copy left-copy">8 programs built by practitioners. Focused on outcomes, not theory.</p>
+            <p className="page-hero-copy">8 programs built by practitioners. Focused on outcomes, not theory.</p>
           </Reveal>
           <Reveal delay={0.08}>
             <div className="filter-row">
@@ -169,17 +169,18 @@ export default function CoursesPage() {
                           </div>
                         ))}
                       </div>
-                      <div className="course-footer">
+                      <div className="course-card-duration">
                         <span className="duration-chip">{course.duration}</span>
+                      </div>
+                      <div className="course-card-actions">
                         <button type="button" className="inline-link inline-link-button" onClick={() => openCourseDetails(course)}>
                           Learn more <ArrowRight className="inline-link-icon" />
                         </button>
+                        <a href={getWhatsappLink(course.title)} target="_blank" rel="noreferrer" className="whatsapp-link whatsapp-link-card">
+                          <MessageCircle className="inline-link-icon" />
+                          Chat on WhatsApp
+                        </a>
                       </div>
-
-                      <a href={getWhatsappLink(course.title)} target="_blank" rel="noreferrer" className="whatsapp-link whatsapp-link-card">
-                        <MessageCircle className="inline-link-icon" />
-                        Chat on WhatsApp
-                      </a>
                     </div>
                   </div>
                 </Reveal>

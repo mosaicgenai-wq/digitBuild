@@ -19,7 +19,8 @@ export default function PlacementServicesPage() {
     <main className="pt-nav">
       <section className="section-padding page-hero-section page-hero-placement">
         <div className="container-custom narrow-center">
-          <Reveal>
+          <Reveal className="page-hero-intro">
+            <SectionEyebrow>Placement Support</SectionEyebrow>
             <h1 className="page-hero-title">
               <span>Get hired faster</span>
               <br />

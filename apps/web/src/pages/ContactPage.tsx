@@ -47,11 +47,12 @@ export default function ContactPage() {
     <main className="pt-nav">
       <section className="section-padding page-hero-section page-hero-contact">
         <div className="container-custom">
-          <Reveal>
+          <Reveal className="page-hero-intro">
             <SectionEyebrow>Contact Us</SectionEyebrow>
-            <h1 className="page-hero-title mb-12">
+            <h1 className="page-hero-title">
               Let's <span className="page-hero-muted">talk</span>
             </h1>
+            <p className="page-hero-copy">Reach out for courses, placement support, partnerships, or product services.</p>
           </Reveal>
 
           <div className="contact-grid">

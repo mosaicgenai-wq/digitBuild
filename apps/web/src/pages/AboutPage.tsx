@@ -40,7 +40,7 @@ export default function AboutPage() {
     <main className="pt-nav">
       <section className="section-padding page-hero-section page-hero-about">
         <div className="container-custom narrow-center">
-          <Reveal>
+          <Reveal className="page-hero-intro">
             <SectionEyebrow>About Us</SectionEyebrow>
             <h1 className="page-hero-title">
               Education that <span className="page-hero-muted">leads to careers</span>
