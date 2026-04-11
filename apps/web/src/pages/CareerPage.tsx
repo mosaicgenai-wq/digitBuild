@@ -274,7 +274,7 @@ export default function CareerPage() {
             <div className="career-modal-note">{selectedOpening.applyNote}</div>
 
             <div className="course-detail-actions course-detail-actions-modal">
-              <a href={`mailto:hello@digitbuild.com?subject=${encodeURIComponent(`Application for ${selectedOpening.title}`)}`} className="btn btn-pill btn-sm">
+              <a href={`mailto:marutidigitbuild@gmail.com?subject=${encodeURIComponent(`Application for ${selectedOpening.title}`)}`} className="btn btn-pill btn-sm">
                 Apply now <Send className="btn-icon" />
               </a>
               <ButtonLink to="/contact" variant="pill-outline" size="sm">

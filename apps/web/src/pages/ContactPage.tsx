@@ -7,6 +7,7 @@ import { useToast } from '../components/toast/ToastProvider';
 import type { ContactPayload } from '../lib/api';
 
 const subjects = ['Course Inquiry', 'Placement Services', 'Tech Services', 'Partnership', 'Other'];
+const experienceOptions = ['Fresher', '1 - 2 years', '3 - 5 years', '6 - 8 years', '9+ years'];
 const whatsappNumber = '917385490573';
 
 const initialValues: ContactPayload = {
@@ -31,7 +32,6 @@ export default function ContactPage() {
     if (!form.name.trim()) nextErrors.name = 'Required';
     if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) nextErrors.email = 'Valid email required';
     if (!form.jobRole.trim()) nextErrors.jobRole = 'Required';
-    if (!form.designation.trim()) nextErrors.designation = 'Required';
     if (!form.experience.trim()) nextErrors.experience = 'Required';
     if (!form.subject) nextErrors.subject = 'Pick a subject';
     if (!form.message.trim()) nextErrors.message = 'Required';
@@ -46,9 +46,9 @@ export default function ContactPage() {
       `Name: ${payload.name}`,
       `Email: ${payload.email}`,
       `Phone: ${payload.phone || 'Not provided'}`,
-      `Job Role: ${payload.jobRole}`,
-      `Designation: ${payload.designation}`,
-      `Experience: ${payload.experience}`,
+      `Job Role: ${payload.jobRole || 'Not provided'}`,
+      `Designation: ${payload.designation || 'Not provided'}`,
+      `Experience: ${payload.experience || 'Not provided'}`,
       `Subject: ${payload.subject}`,
       `Message: ${payload.message}`,
     ].join('\n');
@@ -86,8 +86,8 @@ export default function ContactPage() {
                 <SectionTitle className="mb-3">Contact details</SectionTitle>
                 {[
                   { icon: MapPin, label: 'Address', value: 'Pune, Maharashtra, India' },
-                  { icon: Phone, label: 'Phone', value: '+91 73854 90573' },
-                  { icon: Mail, label: 'Email', value: 'hello@digitbuild.com' },
+                  { icon: Phone, label: 'Phone', value: '73854 90573' },
+                  { icon: Mail, label: 'Email', value: 'marutidigitbuild@gmail.com' },
                 ].map((item) => (
                   <div key={item.label} className="contact-item">
                     <item.icon className="contact-item-icon" />
@@ -124,17 +124,26 @@ export default function ContactPage() {
                   {errors.email ? <p className="field-error">{errors.email}</p> : null}
                 </div>
                 <input className="field" type="tel" placeholder="Phone (optional)" value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} />
-                <div>
-                  <input className="field" type="text" placeholder="Job Role" value={form.jobRole} onChange={(event) => setForm((current) => ({ ...current, jobRole: event.target.value }))} />
-                  {errors.jobRole ? <p className="field-error">{errors.jobRole}</p> : null}
+                <div className="contact-form-row">
+                  <div>
+                    <input className="field" type="text" placeholder="Job Role" value={form.jobRole} onChange={(event) => setForm((current) => ({ ...current, jobRole: event.target.value }))} />
+                    {errors.jobRole ? <p className="field-error">{errors.jobRole}</p> : null}
+                  </div>
+                  <div>
+                    <select className="field" value={form.experience} onChange={(event) => setForm((current) => ({ ...current, experience: event.target.value }))}>
+                      <option value="">Experience</option>
+                      {experienceOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.experience ? <p className="field-error">{errors.experience}</p> : null}
+                  </div>
                 </div>
                 <div>
-                  <input className="field" type="text" placeholder="Designation" value={form.designation} onChange={(event) => setForm((current) => ({ ...current, designation: event.target.value }))} />
+                  <input className="field" type="text" placeholder="Designation (optional)" value={form.designation} onChange={(event) => setForm((current) => ({ ...current, designation: event.target.value }))} />
                   {errors.designation ? <p className="field-error">{errors.designation}</p> : null}
-                </div>
-                <div>
-                  <input className="field" type="text" placeholder="Experience" value={form.experience} onChange={(event) => setForm((current) => ({ ...current, experience: event.target.value }))} />
-                  {errors.experience ? <p className="field-error">{errors.experience}</p> : null}
                 </div>
                 <div>
                   <select className="field" value={form.subject} onChange={(event) => setForm((current) => ({ ...current, subject: event.target.value }))}>

@@ -85,7 +85,6 @@ export default function AboutPage() {
               </div>
             </Reveal>
             <Reveal delay={0.1} className={index % 2 !== 0 ? 'order-mobile-first' : ''}>
-              <SectionEyebrow>{section.title}</SectionEyebrow>
               <SectionTitle className="mb-3">{section.title}</SectionTitle>
               <p className="body-copy">{section.desc}</p>
             </Reveal>

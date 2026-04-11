@@ -596,7 +596,7 @@ export default function HomePage() {
             </Reveal>
             <Reveal delay={0.1}>
               <p className="hero-copy">
-                Industry-aligned courses, guaranteed placement support, and real-world software solutions - all under one roof.
+                Job-oriented IT training programs with industry-aligned courses, Job Placement support, and real-world software development solutions. Learn in-demand skills like Java, Full Stack Development, Data Analytics, and Cloud Computing with hands-on projects.
               </p>
             </Reveal>
             <Reveal delay={0.2}>
@@ -665,9 +665,11 @@ export default function HomePage() {
             {aboutCards.map((card, index) => (
               <Reveal key={card.title} delay={index * 0.08}>
                 <div className="info-card">
-                  <card.icon className="info-icon" strokeWidth={1.5} />
-                  <h3>{card.title}</h3>
-                  <p>{card.desc}</p>
+                  <div className="card-header-inline card-header-inline-center">
+                    <card.icon className="info-icon" strokeWidth={1.5} />
+                    <h3>{card.title}</h3>
+                  </div>
+                  <p className="card-copy-center">{card.desc}</p>
                 </div>
               </Reveal>
             ))}
@@ -686,9 +688,11 @@ export default function HomePage() {
               <Reveal key={service.title} delay={index * 0.06}>
                 <Link to={service.to} className="service-card-link">
                   <div className="info-card">
-                    <service.icon className="info-icon" strokeWidth={1.5} />
-                    <h3>{service.title}</h3>
-                    <p>{service.desc}</p>
+                    <div className="card-header-inline card-header-inline-center">
+                      <service.icon className="info-icon" strokeWidth={1.5} />
+                      <h3>{service.title}</h3>
+                    </div>
+                    <p className="card-copy-center">{service.desc}</p>
                   </div>
                 </Link>
               </Reveal>
@@ -711,9 +715,11 @@ export default function HomePage() {
             {careerOfferings.map((item, index) => (
               <Reveal key={item.title} delay={index * 0.06}>
                 <div className="info-card info-card-with-action">
-                  <item.icon className="info-icon" strokeWidth={1.5} />
-                  <h3>{item.title}</h3>
-                  <p>{item.desc}</p>
+                  <div className="card-header-inline">
+                    <item.icon className="info-icon" strokeWidth={1.5} />
+                    <h3>{item.title}</h3>
+                  </div>
+                  <p className="card-copy-left">{item.desc}</p>
                   <a href={getCareerSupportWhatsappLink(item.title)} target="_blank" rel="noreferrer" className="whatsapp-link whatsapp-link-card">
                     <MessageSquare className="inline-link-icon" />
                     Chat on WhatsApp
@@ -823,9 +829,11 @@ export default function HomePage() {
             {reasons.map((item, index) => (
               <Reveal key={item.title} delay={index * 0.06}>
                 <div className="info-card">
-                  <item.icon className="info-icon" strokeWidth={1.5} />
-                  <h3>{item.title}</h3>
-                  <p>{item.desc}</p>
+                  <div className="card-header-inline card-header-inline-center">
+                    <item.icon className="info-icon" strokeWidth={1.5} />
+                    <h3>{item.title}</h3>
+                  </div>
+                  <p className="card-copy-center">{item.desc}</p>
                 </div>
               </Reveal>
             ))}
