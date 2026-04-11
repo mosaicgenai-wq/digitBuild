@@ -74,7 +74,7 @@ const careerOfferings = [
   {
     icon: FileText,
     title: 'ATS Resume Writing',
-    desc: 'Rank Higher on Naukri. Get More Recruiter Calls. Land Your Dream Job Faster.',
+    desc: 'Rank higher on Naukri with an ATS-focused resume that improves visibility and speeds up your job search.',
   },
   {
     icon: Globe,
@@ -89,7 +89,7 @@ const careerOfferings = [
   {
     icon: Briefcase,
     title: 'Remote Job Placement Support',
-    desc: 'Your dream remote job is out there - we help you find it, apply for it, and land it.',
+    desc: 'Find better remote roles with guided job search and practical support that helps you convert opportunities faster.',
   },
   {
     icon: Users,
@@ -114,7 +114,7 @@ const careerOfferings = [
   {
     icon: BookOpen,
     title: 'Internship and Training',
-    desc: 'Launch your internship journey right with a professionally crafted resume and profile that gets you selected for the best training opportunities.',
+    desc: 'Launch your internship journey with a thoughtfully structured resume that helps you stand out in a competitive job market.',
   },
 ];
 
@@ -711,10 +711,10 @@ export default function HomePage() {
             </p>
           </Reveal>
 
-          <div className="card-grid card-grid-3">
+          <div className="card-grid card-grid-3 career-support-grid">
             {careerOfferings.map((item, index) => (
               <Reveal key={item.title} delay={index * 0.06}>
-                <div className="info-card info-card-with-action">
+                <div className="info-card info-card-with-action career-support-card">
                   <div className="card-header-inline">
                     <item.icon className="info-icon" strokeWidth={1.5} />
                     <h3>{item.title}</h3>
