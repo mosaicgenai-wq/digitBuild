@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&display=swap');
 
 :root {
   --background: 40 20% 98%;
@@ -276,7 +276,7 @@ p { margin: 0; }
 .counter { font-family: 'Sora', sans-serif; font-size: clamp(2.5rem, 4vw, 3.5rem); font-weight: 700; }
 .stat-card p { margin-top: 0.375rem; color: hsl(var(--muted)); font-size: 0.95rem; }
 
-.section-padding { padding: 6rem 0; }
+.section-padding { padding: 4.0rem 0; }
 .surface-section {
   background:
     radial-gradient(circle at top right, hsl(var(--primary) / 0.08), transparent 28%),
@@ -285,8 +285,8 @@ p { margin: 0; }
 .page-hero-section {
   position: relative;
   overflow: hidden;
-  padding-top: 4.5rem;
-  padding-bottom: 4.5rem;
+  padding-top: 3.5rem;
+  padding-bottom: 3.5rem;
   background:
     radial-gradient(circle at top right, hsl(var(--primary) / 0.18), transparent 28%),
     radial-gradient(circle at left 18% bottom 20%, hsl(34 92% 68% / 0.12), transparent 26%),
@@ -428,10 +428,11 @@ p { margin: 0; }
   flex: 0 0 var(--testimonial-card-width);
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   min-height: 18rem;
   border: 1px solid hsl(var(--border));
   border-radius: 1rem;
-  padding: 1.5rem;
+  padding: 1.4rem 1.4rem 0.8rem;
   background:
     radial-gradient(circle at top right, hsl(var(--primary) / 0.1), transparent 38%),
     linear-gradient(180deg, hsl(var(--card)), hsl(var(--card)) 62%, hsl(var(--secondary) / 0.45));
@@ -439,6 +440,13 @@ p { margin: 0; }
   position: relative;
   z-index: 1;
   overflow: hidden;
+}
+.testimonial-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-top: 0.9rem;
 }
 .testimonial-card-active {
   transform: scale(1.08) translateY(-0.2rem);
@@ -465,8 +473,7 @@ p { margin: 0; }
 .testimonial-arrow svg { width: 1.1rem; height: 1.1rem; }
 .testimonial-quote { width: 1.25rem; height: 1.25rem; color: hsl(var(--primary) / 0.34); margin-bottom: 0.9rem; }
 .testimonial-copy {
-  flex: 1;
-  margin-bottom: 1.4rem;
+  margin-bottom: 0;
   color: hsl(var(--muted));
   font-size: 0.94rem;
   font-style: italic;
@@ -474,12 +481,14 @@ p { margin: 0; }
 }
 .testimonial-meta, .testimonial-user { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
 .testimonial-user { justify-content: flex-start; }
+.testimonial-user-copy { display: flex; flex-direction: column; }
 .avatar {
   display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem;
   border-radius: 999px; background: hsl(var(--primary) / 0.1); color: hsl(var(--primary)); font-size: 0.75rem; font-weight: 600;
 }
 .testimonial-name { font-size: 0.75rem; font-weight: 600; }
 .testimonial-role { color: hsl(var(--muted)); font-size: 0.6875rem; }
+.testimonial-company { color: hsl(var(--muted)); font-size: 0.6875rem; }
 .hike-badge {
   flex-shrink: 0;
   padding: 0.45rem 0.75rem;
@@ -1337,8 +1346,8 @@ select.field option {
   html { font-size: 16px; }
   .hero-grid, .split-section, .contact-grid, .card-grid-2, .card-grid-3, .footer-grid, .stats-grid, .career-grid, .career-process { grid-template-columns: 1fr; }
   .hero-grid { gap: 2rem; padding-top: 7rem; }
-  .page-hero-section { padding-top: 3.75rem; padding-bottom: 3.75rem; }
-  .section-padding { padding: 4.5rem 0; }
+  .page-hero-section { padding-top: 3rem; padding-bottom: 3rem; }
+  .section-padding { padding: 3.75rem 0; }
   .stats-grid { gap: 1.5rem; }
   .stat-card + .stat-card { border-left: 0; }
   .desktop-only { display: none; }

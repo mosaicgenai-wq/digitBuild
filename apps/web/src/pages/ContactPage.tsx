@@ -1,14 +1,24 @@
 import { Mail, MapPin, Phone } from 'lucide-react';
-import type { FormEvent } from 'react';
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Button } from '../components/ui/Button';
 import { Reveal } from '../components/ui/Reveal';
 import { SectionEyebrow, SectionTitle } from '../components/ui/SectionIntro';
 import { useToast } from '../components/toast/ToastProvider';
-import { submitContactForm, type ContactPayload } from '../lib/api';
+import type { ContactPayload } from '../lib/api';
 
 const subjects = ['Course Inquiry', 'Placement Services', 'Tech Services', 'Partnership', 'Other'];
-const initialValues: ContactPayload = { name: '', email: '', phone: '', subject: '', message: '' };
+const whatsappNumber = '917385490573';
+
+const initialValues: ContactPayload = {
+  name: '',
+  email: '',
+  phone: '',
+  jobRole: '',
+  designation: '',
+  experience: '',
+  subject: '',
+  message: '',
+};
 
 export default function ContactPage() {
   const { showToast } = useToast();
@@ -20,27 +30,42 @@ export default function ContactPage() {
     const nextErrors: Partial<Record<keyof ContactPayload, string>> = {};
     if (!form.name.trim()) nextErrors.name = 'Required';
     if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) nextErrors.email = 'Valid email required';
+    if (!form.jobRole.trim()) nextErrors.jobRole = 'Required';
+    if (!form.designation.trim()) nextErrors.designation = 'Required';
+    if (!form.experience.trim()) nextErrors.experience = 'Required';
     if (!form.subject) nextErrors.subject = 'Pick a subject';
     if (!form.message.trim()) nextErrors.message = 'Required';
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function getWhatsappLink(payload: ContactPayload) {
+    const message = [
+      'Hello DigitBuild, I would like to connect through the Contact Us form.',
+      '',
+      `Name: ${payload.name}`,
+      `Email: ${payload.email}`,
+      `Phone: ${payload.phone || 'Not provided'}`,
+      `Job Role: ${payload.jobRole}`,
+      `Designation: ${payload.designation}`,
+      `Experience: ${payload.experience}`,
+      `Subject: ${payload.subject}`,
+      `Message: ${payload.message}`,
+    ].join('\n');
+
+    return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!validate()) return;
-    setLoading(true);
 
-    try {
-      await submitContactForm(form);
-      showToast('✓ Sent!', "We'll get back to you shortly.");
-      setForm(initialValues);
-      setErrors({});
-    } catch {
-      showToast('Unable to send', 'Please try again in a moment.');
-    } finally {
-      setLoading(false);
-    }
+    setLoading(true);
+    window.open(getWhatsappLink(form), '_blank', 'noopener,noreferrer');
+    showToast('Sent to WhatsApp', 'Your message is ready to send on WhatsApp.');
+    setForm(initialValues);
+    setErrors({});
+    setLoading(false);
   }
 
   return (
@@ -100,6 +125,18 @@ export default function ContactPage() {
                 </div>
                 <input className="field" type="tel" placeholder="Phone (optional)" value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} />
                 <div>
+                  <input className="field" type="text" placeholder="Job Role" value={form.jobRole} onChange={(event) => setForm((current) => ({ ...current, jobRole: event.target.value }))} />
+                  {errors.jobRole ? <p className="field-error">{errors.jobRole}</p> : null}
+                </div>
+                <div>
+                  <input className="field" type="text" placeholder="Designation" value={form.designation} onChange={(event) => setForm((current) => ({ ...current, designation: event.target.value }))} />
+                  {errors.designation ? <p className="field-error">{errors.designation}</p> : null}
+                </div>
+                <div>
+                  <input className="field" type="text" placeholder="Experience" value={form.experience} onChange={(event) => setForm((current) => ({ ...current, experience: event.target.value }))} />
+                  {errors.experience ? <p className="field-error">{errors.experience}</p> : null}
+                </div>
+                <div>
                   <select className="field" value={form.subject} onChange={(event) => setForm((current) => ({ ...current, subject: event.target.value }))}>
                     <option value="">Subject</option>
                     {subjects.map((subject) => (
@@ -115,7 +152,7 @@ export default function ContactPage() {
                   {errors.message ? <p className="field-error">{errors.message}</p> : null}
                 </div>
                 <Button type="submit" block disabled={loading}>
-                  {loading ? 'Sending...' : 'Send Message'}
+                  {loading ? 'Opening WhatsApp...' : 'Send on WhatsApp'}
                 </Button>
               </form>
             </Reveal>

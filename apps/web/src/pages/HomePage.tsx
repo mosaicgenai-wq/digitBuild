@@ -24,11 +24,11 @@ import { Reveal } from '../components/ui/Reveal';
 import { SectionEyebrow, SectionTitle } from '../components/ui/SectionIntro';
 
 const stats = [
-  { value: 3500, suffix: '+', label: 'Resumes Written' },
-  { value: 1000, suffix: '+', label: 'LinkedIn Profiles Optimized' },
+  { value: 5000, suffix: '+', label: 'Resumes Written' },
+  { value: 2000, suffix: '+', label: 'LinkedIn Profiles Optimized' },
   { value: 70, suffix: '%+', label: 'Interview Conversion' },
   { value: 98, suffix: '%', label: 'Candidates Placed' },
-  { value: 15, suffix: '+', label: 'Clients Served' },
+  { value: 15, suffix: '+', label: 'Countries Served' },
 ];
 
 const aboutCards = [
@@ -765,19 +765,20 @@ export default function HomePage() {
             >
               {renderedTestimonials.map((testimonial, index) => (
                 <div key={testimonial.name + testimonial.company} className={`testimonial-card testimonial-card-${getVisualSlot(index)}`}>
-                  <Quote className="testimonial-quote" />
-                  <p className="testimonial-copy">"{testimonial.quote}"</p>
                   <div className="testimonial-meta">
                     <div className="testimonial-user">
                       <div className="avatar">{testimonial.name[0]}</div>
-                      <div>
+                      <div className="testimonial-user-copy">
                         <p className="testimonial-name">{testimonial.name}</p>
-                        <p className="testimonial-role">
-                          {testimonial.role} · {testimonial.company}
-                        </p>
+                        <p className="testimonial-role">{testimonial.role}</p>
+                        <p className="testimonial-company">{testimonial.company}</p>
                       </div>
                     </div>
                     <span className="hike-badge">{testimonial.hike} hike</span>
+                  </div>
+                  <div className="testimonial-body">
+                    <Quote className="testimonial-quote" />
+                    <p className="testimonial-copy">"{testimonial.quote}"</p>
                   </div>
                 </div>
               ))}

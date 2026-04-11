@@ -12,8 +12,8 @@ const links = [
   { label: 'Courses', to: '/courses' },
   { label: 'Blog', to: '/blog' },
   { label: 'About Us', to: '/about' },
-  { label: 'Career', to: '/career' },
   { label: 'Contact Us', to: '/contact' },
+  { label: 'Career', to: '/career' },
 ];
 
 export function Navbar() {

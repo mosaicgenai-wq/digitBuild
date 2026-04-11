@@ -2,6 +2,9 @@ export type ContactPayload = {
   name: string;
   email: string;
   phone: string;
+  jobRole: string;
+  designation: string;
+  experience: string;
   subject: string;
   message: string;
 };
