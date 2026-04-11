@@ -159,8 +159,10 @@ export default function CoursesPage() {
                   <div className="course-card">
                     <div className="course-card-bar" />
                     <div className="course-card-body">
-                      <course.icon className="info-icon" strokeWidth={1.5} />
-                      <h3>{course.title}</h3>
+                      <div className="card-header-inline">
+                        <course.icon className="info-icon" strokeWidth={1.5} />
+                        <h3>{course.title}</h3>
+                      </div>
                       <div className="feature-list">
                         {course.highlights.map((item) => (
                           <div key={item} className="feature-item">

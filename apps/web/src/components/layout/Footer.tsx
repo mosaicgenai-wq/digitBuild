@@ -1,3 +1,4 @@
+import { Instagram, Linkedin, Mail } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 const footerLinks = {
@@ -27,6 +28,17 @@ export function Footer() {
               Digit<span>Build</span>
             </NavLink>
             <p className="footer-copy">Career-focused tech education &amp; IT solutions from Pune, India.</p>
+            <div className="footer-socials">
+              <a href="mailto:marutidigitbuild@gmail.com" aria-label="Gmail" className="footer-social-link">
+                <Mail />
+              </a>
+              <a href="https://www.instagram.com/" target="_blank" rel="noreferrer" aria-label="Instagram" className="footer-social-link">
+                <Instagram />
+              </a>
+              <a href="https://www.linkedin.com/" target="_blank" rel="noreferrer" aria-label="LinkedIn" className="footer-social-link">
+                <Linkedin />
+              </a>
+            </div>
           </div>
 
           {Object.entries(footerLinks).map(([group, items]) => (

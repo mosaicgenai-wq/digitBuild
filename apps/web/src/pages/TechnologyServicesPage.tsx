@@ -35,9 +35,11 @@ export default function TechnologyServicesPage() {
             {items.map((item, index) => (
               <Reveal key={item.title} delay={index * 0.08}>
                 <div className="info-card large-card">
-                  <item.icon className="large-card-icon" strokeWidth={1.2} />
-                  <h3>{item.title}</h3>
-                  <p>{item.desc}</p>
+                  <div className="card-header-inline card-header-inline-center">
+                    <item.icon className="large-card-icon" strokeWidth={1.2} />
+                    <h3>{item.title}</h3>
+                  </div>
+                  <p className="card-copy-center">{item.desc}</p>
                 </div>
               </Reveal>
             ))}

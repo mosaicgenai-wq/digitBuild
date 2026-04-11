@@ -60,9 +60,11 @@ export default function PlacementServicesPage() {
             {offerings.map((item, index) => (
               <Reveal key={item.title} delay={index * 0.06}>
                 <div className="info-card">
-                  <item.icon className="info-icon" strokeWidth={1.5} />
-                  <h3>{item.title}</h3>
-                  <p>{item.desc}</p>
+                  <div className="card-header-inline card-header-inline-center">
+                    <item.icon className="info-icon" strokeWidth={1.5} />
+                    <h3>{item.title}</h3>
+                  </div>
+                  <p className="card-copy-center">{item.desc}</p>
                 </div>
               </Reveal>
             ))}

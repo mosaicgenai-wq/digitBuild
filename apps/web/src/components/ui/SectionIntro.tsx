@@ -1,7 +1,13 @@
 import type { PropsWithChildren } from 'react';
 
+
 export function SectionEyebrow({ children }: PropsWithChildren) {
-  return <span className="section-eyebrow">{children}</span>;
+  const label = typeof children === 'string' ? children : '';
+  return (
+    <span className="section-eyebrow">
+      <span>{children}</span>
+    </span>
+  );
 }
 
 type SectionTitleProps = PropsWithChildren<{
