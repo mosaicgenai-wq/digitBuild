@@ -31,6 +31,7 @@ export default function ContactPage() {
     const nextErrors: Partial<Record<keyof ContactPayload, string>> = {};
     if (!form.name.trim()) nextErrors.name = 'Required';
     if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) nextErrors.email = 'Valid email required';
+    if (!form.phone.trim()) nextErrors.phone = 'Required';
     if (!form.jobRole.trim()) nextErrors.jobRole = 'Required';
     if (!form.experience.trim()) nextErrors.experience = 'Required';
     if (!form.subject) nextErrors.subject = 'Pick a subject';
@@ -45,7 +46,7 @@ export default function ContactPage() {
       '',
       `Name: ${payload.name}`,
       `Email: ${payload.email}`,
-      `Phone: ${payload.phone || 'Not provided'}`,
+      `Phone: ${payload.phone}`,
       `Job Role: ${payload.jobRole || 'Not provided'}`,
       `Designation: ${payload.designation || 'Not provided'}`,
       `Experience: ${payload.experience || 'Not provided'}`,
@@ -123,7 +124,10 @@ export default function ContactPage() {
                   <input className="field" type="email" placeholder="Email" value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} />
                   {errors.email ? <p className="field-error">{errors.email}</p> : null}
                 </div>
-                <input className="field" type="tel" placeholder="Phone (optional)" value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} />
+                <div>
+                  <input className="field" type="tel" placeholder="Phone" value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} />
+                  {errors.phone ? <p className="field-error">{errors.phone}</p> : null}
+                </div>
                 <div className="contact-form-row">
                   <div>
                     <input className="field" type="text" placeholder="Job Role" value={form.jobRole} onChange={(event) => setForm((current) => ({ ...current, jobRole: event.target.value }))} />
