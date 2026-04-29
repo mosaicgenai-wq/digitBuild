@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { getCareerPackageBySlug } from '../../src/lib/payment';
+import { getCareerPackageBySlug } from '../../src/lib/payment.js';
 
 type VercelRequestLike = {
   method?: string;
