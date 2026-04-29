@@ -1,13 +1,15 @@
 import crypto from 'node:crypto';
 
-function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-}
+type VercelRequestLike = {
+  method?: string;
+  body?: unknown;
+  headers?: Record<string, string | string[] | undefined>;
+};
+
+type VercelResponseLike = {
+  status: (code: number) => VercelResponseLike;
+  json: (body: unknown) => void;
+};
 
 function getRequiredEnv(name: string) {
   const value = process.env[name];
@@ -18,12 +20,23 @@ function getRequiredEnv(name: string) {
   return value;
 }
 
-async function handleWebhook(request: Request) {
-  const rawBody = await request.text();
-  const signature = request.headers.get('x-razorpay-signature');
+function getHeader(headers: VercelRequestLike['headers'], name: string) {
+  const value = headers?.[name] ?? headers?.[name.toLowerCase()];
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function getRawBody(body: unknown) {
+  if (typeof body === 'string') return body;
+  return JSON.stringify(body ?? {});
+}
+
+async function handleWebhook(request: VercelRequestLike, response: VercelResponseLike) {
+  const rawBody = getRawBody(request.body);
+  const signature = getHeader(request.headers, 'x-razorpay-signature');
 
   if (!signature) {
-    return json({ message: 'Missing Razorpay signature header.' }, 400);
+    response.status(400).json({ message: 'Missing Razorpay signature header.' });
+    return;
   }
 
   const expectedSignature = crypto
@@ -32,27 +45,24 @@ async function handleWebhook(request: Request) {
     .digest('hex');
 
   if (expectedSignature !== signature) {
-    return json({ success: false, message: 'Invalid webhook signature.' }, 400);
+    response.status(400).json({ success: false, message: 'Invalid webhook signature.' });
+    return;
   }
 
-  return json({ success: true });
+  response.status(200).json({ success: true });
 }
 
-export default {
-  async fetch(request: Request) {
-    try {
-      if (request.method !== 'POST') {
-        return json({ message: 'Method not allowed.' }, 405);
-      }
-
-      return await handleWebhook(request);
-    } catch (error) {
-      return json(
-        {
-          message: error instanceof Error ? error.message : 'Unexpected webhook error.',
-        },
-        500,
-      );
+export default async function handler(request: VercelRequestLike, response: VercelResponseLike) {
+  try {
+    if (request.method !== 'POST') {
+      response.status(405).json({ message: 'Method not allowed.' });
+      return;
     }
-  },
+
+    await handleWebhook(request, response);
+  } catch (error) {
+    response.status(500).json({
+      message: error instanceof Error ? error.message : 'Unexpected webhook error.',
+    });
+  }
 }

@@ -1,5 +1,15 @@
 import { getCareerPackageBySlug } from '../../src/lib/payment';
 
+type VercelRequestLike = {
+  method?: string;
+  body?: unknown;
+};
+
+type VercelResponseLike = {
+  status: (code: number) => VercelResponseLike;
+  json: (body: unknown) => void;
+};
+
 type CreateOrderPayload = {
   packageSlug?: string;
   customer?: {
@@ -11,15 +21,6 @@ type CreateOrderPayload = {
   };
 };
 
-function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-}
-
 function getRequiredEnv(name: string) {
   const value = process.env[name];
   if (!value) {
@@ -29,12 +30,20 @@ function getRequiredEnv(name: string) {
   return value;
 }
 
-async function handleCreateOrder(request: Request) {
-  const payload = (await request.json()) as CreateOrderPayload;
+function getJsonBody(body: unknown) {
+  if (typeof body === 'string') {
+    return JSON.parse(body) as CreateOrderPayload;
+  }
+
+  return (body ?? {}) as CreateOrderPayload;
+}
+
+async function handleCreateOrder(payload: CreateOrderPayload, response: VercelResponseLike) {
   const selectedPackage = getCareerPackageBySlug(payload.packageSlug ?? null);
 
   if (!selectedPackage) {
-    return json({ message: 'Invalid package selected.' }, 400);
+    response.status(400).json({ message: 'Invalid package selected.' });
+    return;
   }
 
   const keyId = getRequiredEnv('RAZORPAY_KEY_ID');
@@ -66,35 +75,32 @@ async function handleCreateOrder(request: Request) {
 
   if (!orderResponse.ok) {
     const errorText = await orderResponse.text();
-    return json({ message: 'Unable to create Razorpay order.', details: errorText }, 502);
+    response.status(502).json({ message: 'Unable to create Razorpay order.', details: errorText });
+    return;
   }
 
   const order = await orderResponse.json();
 
-  return json({
+  response.status(200).json({
     keyId,
     orderId: order.id,
     amount: selectedPackage.amount,
     currency: selectedPackage.currency,
     packageName: selectedPackage.name,
-  });
+  })
 }
 
-export default {
-  async fetch(request: Request) {
-    try {
-      if (request.method !== 'POST') {
-        return json({ message: 'Method not allowed.' }, 405);
-      }
-
-      return await handleCreateOrder(request);
-    } catch (error) {
-      return json(
-        {
-          message: error instanceof Error ? error.message : 'Unexpected error while creating order.',
-        },
-        500,
-      );
+export default async function handler(request: VercelRequestLike, response: VercelResponseLike) {
+  try {
+    if (request.method !== 'POST') {
+      response.status(405).json({ message: 'Method not allowed.' });
+      return;
     }
-  },
+
+    await handleCreateOrder(getJsonBody(request.body), response);
+  } catch (error) {
+    response.status(500).json({
+      message: error instanceof Error ? error.message : 'Unexpected error while creating order.',
+    });
+  }
 }
