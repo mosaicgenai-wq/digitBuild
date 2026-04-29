@@ -3,6 +3,7 @@ import {
   Briefcase,
   ChevronLeft,
   ChevronRight,
+  CreditCard,
   FileCheck,
   FileText,
   Globe,
@@ -15,13 +16,15 @@ import {
   Sparkles,
   Target,
   Users,
+  X,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { ButtonLink } from '../components/ui/Button';
 import { Counter } from '../components/ui/Counter';
 import { Reveal } from '../components/ui/Reveal';
 import { SectionEyebrow, SectionTitle } from '../components/ui/SectionIntro';
+import { careerPackages } from '../lib/payment';
 
 const stats = [
   { value: 5000, suffix: '+', label: 'Resumes Written' },
@@ -498,10 +501,30 @@ const placedCompaniesMarquee = [...placedCompanies, ...placedCompanies];
 const whatsappNumber = '+917385490573';
 
 export default function HomePage() {
+  const navigate = useNavigate();
   const [activeIndex, setActiveIndex] = useState(0);
   const [testimonialDirection, setTestimonialDirection] = useState<-1 | 0 | 1>(0);
   const [isTestimonialAnimating, setIsTestimonialAnimating] = useState(false);
   const [isTestimonialResetting, setIsTestimonialResetting] = useState(false);
+  const [selectedCareerOffering, setSelectedCareerOffering] = useState<(typeof careerOfferings)[number] | null>(null);
+  const [selectedCareerPackage, setSelectedCareerPackage] = useState<(typeof careerPackages)[number] | null>(null);
+  const careerPackageDialogRef = useRef<HTMLDialogElement | null>(null);
+
+  useEffect(() => {
+    const dialog = careerPackageDialogRef.current;
+    if (!dialog) return;
+
+    if (selectedCareerOffering) {
+      if (!dialog.open) {
+        dialog.showModal();
+      }
+      return;
+    }
+
+    if (dialog.open) {
+      dialog.close();
+    }
+  }, [selectedCareerOffering]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -578,6 +601,23 @@ export default function HomePage() {
   function getCareerSupportWhatsappLink(offeringTitle: string) {
     const message = `Hi DigitBuild, I want to know more about your ${offeringTitle} service.`;
     return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+  }
+
+  function openCareerPackageModal(offering: (typeof careerOfferings)[number]) {
+    setSelectedCareerPackage(null);
+    setSelectedCareerOffering(offering);
+  }
+
+  function closeCareerPackageModal() {
+    setSelectedCareerPackage(null);
+    setSelectedCareerOffering(null);
+  }
+
+  function handleProceedToPayment() {
+    if (!selectedCareerPackage) return;
+
+    closeCareerPackageModal();
+    navigate(`/placement-payment?package=${encodeURIComponent(selectedCareerPackage.slug)}`);
   }
 
   return (
@@ -720,16 +760,84 @@ export default function HomePage() {
                     <h3>{item.title}</h3>
                   </div>
                   <p className="card-copy-left">{item.desc}</p>
-                  <a href={getCareerSupportWhatsappLink(item.title)} target="_blank" rel="noreferrer" className="whatsapp-link whatsapp-link-card">
-                    <MessageSquare className="inline-link-icon" />
-                    Chat on WhatsApp
-                  </a>
+                  <div className="career-support-card-actions">
+                    <button type="button" className="btn btn-pill btn-sm career-buy-button" onClick={() => openCareerPackageModal(item)}>
+                      <CreditCard className="btn-icon" />
+                      Buy Now
+                    </button>
+                    <a href={getCareerSupportWhatsappLink(item.title)} target="_blank" rel="noreferrer" className="whatsapp-link whatsapp-link-card">
+                      <MessageSquare className="inline-link-icon" />
+                      Chat on WhatsApp
+                    </a>
+                  </div>
                 </div>
               </Reveal>
             ))}
           </div>
         </div>
       </section>
+
+      <dialog
+        ref={careerPackageDialogRef}
+        className="course-modal"
+        onClose={closeCareerPackageModal}
+        onClick={(event) => {
+          if (event.target === event.currentTarget) {
+            closeCareerPackageModal();
+          }
+        }}
+      >
+        {selectedCareerOffering ? (
+          <div className="course-modal-panel" aria-labelledby="career-package-modal-title" aria-describedby="career-package-modal-desc">
+            <div className="course-modal-header">
+              <div>
+                <span className="course-modal-kicker">Placement Support</span>
+                <h2 id="career-package-modal-title" className="course-modal-title">
+                  Placement Support Packages
+                </h2>
+                <p id="career-package-modal-desc" className="course-modal-copy">
+                  Choose a package that fits your experience level. These package options are available across all placement support services.
+                </p>
+              </div>
+              <button type="button" className="course-modal-close" onClick={closeCareerPackageModal} aria-label="Close package selection" autoFocus>
+                <X />
+              </button>
+            </div>
+
+            <div className="career-package-row" aria-label="Placement support packages">
+              {careerPackages.map((pkg) => (
+                <button
+                  key={pkg.name}
+                  type="button"
+                  className={`course-detail-panel course-detail-panel-modal career-package-card${selectedCareerPackage?.slug === pkg.slug ? ' is-selected' : ''}`}
+                  onClick={() => setSelectedCareerPackage(pkg)}
+                  aria-pressed={selectedCareerPackage?.slug === pkg.slug}
+                >
+                  <div className="course-detail-block">
+                    <p className="course-detail-label">{pkg.experience}</p>
+                    <h3>{pkg.name}</h3>
+                    <p className="course-detail-copy">{pkg.price}</p>
+                  </div>
+                  <div className="course-detail-block">
+                    <p className="course-detail-label">Includes</p>
+                    <ul className="course-detail-list">
+                      {pkg.features.map((feature) => (
+                        <li key={feature}>{feature}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className="course-detail-actions course-detail-actions-modal">
+              <button type="button" className="btn btn-pill btn-sm" disabled={!selectedCareerPackage} aria-disabled={!selectedCareerPackage} onClick={handleProceedToPayment}>
+                Proceed to payment
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </dialog>
 
       <section className="stats-band">
         <div className="container-custom">
