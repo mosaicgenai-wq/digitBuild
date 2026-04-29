@@ -3,8 +3,8 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
-    "types": ["vite/client"],
+    "types": ["vite/client", "node"],
     "baseUrl": "./src"
   },
-  "include": ["src"]
+  "include": ["src", "api"]
 }
