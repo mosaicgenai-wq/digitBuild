@@ -76,6 +76,18 @@ async function loadRazorpayScript() {
   });
 }
 
+async function parseApiResponse(response: Response) {
+  const text = await response.text();
+
+  try {
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    return {
+      message: text || 'Unexpected non-JSON response from server.',
+    };
+  }
+}
+
 export default function PlacementPaymentPage() {
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -133,19 +145,19 @@ export default function PlacementPaymentPage() {
         }),
       });
 
-      const orderData = await createOrderResponse.json();
+      const orderData = await parseApiResponse(createOrderResponse);
 
       if (!createOrderResponse.ok) {
-        throw new Error(orderData.message || 'Unable to create Razorpay order.');
+        throw new Error(typeof orderData.message === 'string' ? orderData.message : 'Unable to create Razorpay order.');
       }
 
       const checkout = new window.Razorpay({
-        key: orderData.keyId,
-        amount: orderData.amount,
-        currency: orderData.currency,
+        key: String(orderData.keyId),
+        amount: Number(orderData.amount),
+        currency: String(orderData.currency),
         name: 'DigitBuild',
         description: packageDetails.name,
-        order_id: orderData.orderId,
+        order_id: String(orderData.orderId),
         prefill: {
           name: form.name,
           email: form.email,
@@ -172,10 +184,10 @@ export default function PlacementPaymentPage() {
             }),
           });
 
-          const verifyData = await verifyResponse.json();
+          const verifyData = await parseApiResponse(verifyResponse);
 
           if (!verifyResponse.ok || !verifyData.success) {
-            showToast('Verification failed', 'Payment was received but could not be verified.');
+            showToast('Verification failed', typeof verifyData.message === 'string' ? verifyData.message : 'Payment was received but could not be verified.');
             setLoading(false);
             return;
           }
