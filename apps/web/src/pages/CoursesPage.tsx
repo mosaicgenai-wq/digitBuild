@@ -1,187 +1,215 @@
-import { ArrowRight, Atom, ChartColumn, Check, CreditCard, Database, Lock, MessageCircle, Smartphone, Terminal, TestTube, X } from 'lucide-react';
+import { ArrowRight, Atom, ChartColumn, Check, CreditCard, Database, Edit2, Lock, MessageCircle, Plus, Smartphone, Terminal, TestTube, Trash2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Reveal } from '../components/ui/Reveal';
 import { SectionEyebrow, SectionTitle } from '../components/ui/SectionIntro';
 
 const categories = ['All', 'Development', 'Testing', 'Analytics'];
 const whatsappNumber = '+917385490573';
-const courses = [
-  {
-    title: 'Full Stack Development',
-    icon: Terminal,
-    cat: 'Development',
-    duration: '6 Months',
-    highlights: ['MERN Stack', 'APIs & Deployment', 'Real Projects'],
-    timeline: '24 weeks with live sessions, projects, and placement prep.',
-    curriculum: ['HTML, CSS, JavaScript fundamentals', 'React, Node.js, Express, MongoDB', 'Live capstone, Git, deployment, interview readiness'],
-    learn: ['Build responsive frontend interfaces with React', 'Design REST APIs and connect databases securely', 'Handle authentication, deployment, and version control workflows'],
-    outcomes: ['Portfolio-ready full stack projects', 'Confidence in frontend + backend interview rounds', 'Job-ready understanding of production web app architecture'],
-  },
-  {
-    title: 'React JS',
-    icon: Atom,
-    cat: 'Development',
-    duration: '3 Months',
-    highlights: ['Hooks & State', 'Next.js Basics', 'Portfolio Build'],
-    timeline: '12 weeks focused on frontend projects and modern React workflows.',
-    curriculum: ['React foundations and component architecture', 'Routing, forms, APIs, state management', 'Portfolio app, optimization, deployment basics'],
-    learn: ['Create reusable components and scalable UI structure', 'Work with APIs, forms, routing, and client-side state', 'Understand performance basics and modern frontend workflows'],
-    outcomes: ['A polished frontend portfolio app', 'Stronger React-specific project discussions', 'Readiness for junior frontend developer roles'],
-  },
-  {
-    title: 'Python',
-    icon: Terminal,
-    cat: 'Development',
-    duration: '4 Months',
-    highlights: ['Core Python', 'Django', 'Data Structures'],
-    timeline: '16 weeks from Python basics to backend project delivery.',
-    curriculum: ['Core Python and problem solving', 'Django, REST APIs, database integration', 'Mini projects, debugging, coding interview practice'],
-    learn: ['Write clean Python scripts and solve programming problems', 'Build backend applications with Django and APIs', 'Use data structures and debugging practices effectively'],
-    outcomes: ['Strong programming fundamentals', 'Hands-on backend project experience', 'Better preparation for Python and backend interviews'],
-  },
-  {
-    title: 'Mobile Apps',
-    icon: Smartphone,
-    cat: 'Development',
-    duration: '5 Months',
-    highlights: ['React Native', 'Cross-platform', 'App Store Ready'],
-    timeline: '20 weeks with hands-on mobile UI, API, and release preparation.',
-    curriculum: ['React Native fundamentals and navigation', 'Device APIs, forms, auth, backend integration', 'Production-style app build and publishing checklist'],
-    learn: ['Build mobile UI flows for Android and iOS from one codebase', 'Integrate authentication, APIs, and native device capabilities', 'Prepare apps for testing, release, and deployment reviews'],
-    outcomes: ['A real cross-platform mobile project', 'Understanding of production mobile app workflows', 'Readiness for React Native developer opportunities'],
-  },
-  {
-    title: 'QA & Testing',
-    icon: TestTube,
-    cat: 'Testing',
-    duration: '4 Months',
-    highlights: ['Selenium & Cypress', 'API Testing', 'CI/CD'],
-    timeline: '16 weeks of manual testing, automation, and reporting workflows.',
-    curriculum: ['Testing concepts, bug lifecycle, test cases', 'Selenium, Cypress, API and regression testing', 'Framework setup, CI basics, mock interview prep'],
-    learn: ['Write test cases, bug reports, and regression plans', 'Automate browser and API testing with modern tools', 'Understand QA workflows in agile teams and delivery pipelines'],
-    outcomes: ['Practical testing and automation exposure', 'Experience discussing QA scenarios and defects clearly', 'Readiness for manual and automation QA roles'],
-  },
-  {
-    title: 'Business Analytics',
-    icon: ChartColumn,
-    cat: 'Analytics',
-    duration: '3 Months',
-    highlights: ['Excel & SQL', 'Power BI', 'Case Studies'],
-    timeline: '12 weeks focused on dashboards, SQL, and business reporting.',
-    curriculum: ['Excel, SQL, KPIs, and reporting basics', 'Power BI dashboards and stakeholder storytelling', 'Case studies, interview tasks, portfolio review'],
-    learn: ['Work with business datasets using Excel and SQL', 'Create dashboards and reports for decision-making', 'Present insights in a way that non-technical stakeholders understand'],
-    outcomes: ['Case-study based analytics portfolio pieces', 'Stronger KPI, reporting, and dashboard fundamentals', 'Preparation for analyst and reporting roles'],
-  },
-  {
-    title: 'Data Analytics',
-    icon: Database,
-    cat: 'Analytics',
-    duration: '4 Months',
-    highlights: ['Python for Data', 'Statistics', 'Real Datasets'],
-    timeline: '16 weeks of analytics workflows, real datasets, and insights reporting.',
-    curriculum: ['Python, Excel, SQL, and exploratory analysis', 'Statistics, data cleaning, and visualization', 'Projects with dashboards, insights, and presentation practice'],
-    learn: ['Clean, analyze, and visualize data using common analytics tools', 'Use statistics to interpret patterns and validate findings', 'Turn raw data into business-friendly reports and dashboards'],
-    outcomes: ['Hands-on analytics projects with real datasets', 'Practical experience with end-to-end analysis workflow', 'Readiness for data analyst entry-level interviews'],
-  },
-  {
-    title: 'Data Science',
-    icon: Database,
-    cat: 'Analytics',
-    duration: '6 Months',
-    highlights: ['Machine Learning', 'Deep Learning', 'Capstone'],
-    timeline: '24 weeks from data foundations to machine learning capstone work.',
-    curriculum: ['Python, EDA, feature engineering, and statistics', 'Machine learning, model evaluation, and deployment basics', 'Capstone project, portfolio support, and interview prep'],
-    learn: ['Build machine learning workflows from problem framing to evaluation', 'Work with feature engineering, model selection, and experimentation', 'Understand basic deployment and real-world data science decision making'],
-    outcomes: ['A capstone that demonstrates full data science workflow', 'Better understanding of ML concepts beyond tutorials', 'Preparation for junior data science and ML analyst roles'],
-  },
-];
+
+const iconMap: Record<string, any> = {
+  Terminal, Atom, Smartphone, TestTube, ChartColumn, Database
+};
+
+interface Course {
+  id?: string;
+  title: string;
+  icon: string;
+  cat: string;
+  duration: string;
+  highlights: string[];
+  timeline: string;
+  curriculum: string[];
+  learn: string[];
+  outcomes: string[];
+}
 
 export default function CoursesPage() {
+  const [courses, setCourses] = useState<Course[]>([]);
   const [category, setCategory] = useState('All');
-  const [selectedCourse, setSelectedCourse] = useState<(typeof courses)[number] | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isManaging, setIsManaging] = useState(false);
+  const [manageData, setManageData] = useState<any>({
+    title: '', icon: 'Terminal', cat: 'Development', duration: '', highlights: '', timeline: '', curriculum: '', learn: '', outcomes: ''
+  });
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState<string | null>(null);
+  
   const dialogRef = useRef<HTMLDialogElement | null>(null);
+  const manageDialogRef = useRef<HTMLDialogElement | null>(null);
+  const confirmDialogRef = useRef<HTMLDialogElement | null>(null);
+
+  useEffect(() => {
+    setIsAdmin(localStorage.getItem('userRole') === 'admin');
+    fetchCourses();
+  }, []);
+
+  const fetchCourses = async () => {
+    try {
+      const res = await fetch('/api/courses');
+      const data = await res.json();
+      setCourses(data);
+    } catch (err) {
+      console.error('Failed to fetch courses');
+    }
+  };
+
   const filtered = category === 'All' ? courses : courses.filter((course) => course.cat === category);
 
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
-
-    if (selectedCourse) {
-      if (!dialog.open) {
-        dialog.showModal();
-      }
-      return;
-    }
-
-    if (dialog.open) {
+    if (selectedCourse && !isManaging && !isConfirmingDelete) {
+      if (!dialog.open) dialog.showModal();
+    } else if (dialog.open) {
       dialog.close();
     }
-  }, [selectedCourse]);
+  }, [selectedCourse, isManaging, isConfirmingDelete]);
 
-  function getWhatsappLink(courseTitle: string) {
-    const message = `Hi DigitBuild, I want to know more about the ${courseTitle} course.`;
-    return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
-  }
+  useEffect(() => {
+    const dialog = manageDialogRef.current;
+    if (!dialog) return;
+    if (isManaging) {
+      if (!dialog.open) dialog.showModal();
+    } else if (dialog.open) {
+      dialog.close();
+    }
+  }, [isManaging]);
 
-  function openCourseDetails(course: (typeof courses)[number]) {
-    setSelectedCourse(course);
-  }
+  useEffect(() => {
+    const dialog = confirmDialogRef.current;
+    if (!dialog) return;
+    if (isConfirmingDelete) {
+      if (!dialog.open) dialog.showModal();
+    } else if (dialog.open) {
+      dialog.close();
+    }
+  }, [isConfirmingDelete]);
 
-  function closeCourseDetails() {
-    setSelectedCourse(null);
-  }
+  const handleSaveCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Prepare data by splitting newline strings back into arrays
+    const payload = {
+      ...manageData,
+      highlights: manageData.highlights.split('\n').map((s: string) => s.trim()).filter(Boolean),
+      curriculum: manageData.curriculum.split('\n').map((s: string) => s.trim()).filter(Boolean),
+      learn: manageData.learn.split('\n').map((s: string) => s.trim()).filter(Boolean),
+      outcomes: manageData.outcomes.split('\n').map((s: string) => s.trim()).filter(Boolean),
+    };
+
+    const method = manageData.id ? 'PUT' : 'POST';
+    const url = manageData.id ? `/api/courses/${manageData.id}` : '/api/courses';
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        setIsManaging(false);
+        fetchCourses();
+      }
+    } catch (err) {
+      alert('Failed to save course');
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!isConfirmingDelete) return;
+    try {
+      const res = await fetch(`/api/courses/${isConfirmingDelete}`, { method: 'DELETE' });
+      if (res.ok) {
+        setIsConfirmingDelete(null);
+        fetchCourses();
+      }
+    } catch (err) {
+      alert('Failed to delete course');
+    }
+  };
+
+  const openManage = (course?: any) => {
+    if (course) {
+      setManageData({
+        ...course,
+        highlights: course.highlights?.join('\n') || '',
+        curriculum: course.curriculum?.join('\n') || '',
+        learn: course.learn?.join('\n') || '',
+        outcomes: course.outcomes?.join('\n') || '',
+      });
+    } else {
+      setManageData({ 
+        title: '', icon: 'Terminal', cat: 'Development', duration: '', 
+        highlights: '', timeline: '', curriculum: '', learn: '', outcomes: '' 
+      });
+    }
+    setIsManaging(true);
+  };
 
   return (
     <main className="pt-nav">
       <section className="section-padding page-hero-section page-hero-courses">
         <div className="container-custom">
           <Reveal className="page-hero-intro">
-            <SectionEyebrow>Courses</SectionEyebrow>
-            <SectionTitle as="h1" className="mb-3">
-              Learn what the industry <span className="hero-title-muted">actually needs</span>
+            <SectionEyebrow>Course Catalog</SectionEyebrow>
+            <SectionTitle as="h1" className="mb-4">
+              Explore Our <span className="hero-title-muted">Programs</span>
             </SectionTitle>
-            <p className="page-hero-copy">8 programs built by practitioners. Focused on outcomes, not theory.</p>
+            <p className="page-hero-copy">Manage and view our industry-leading training programs.</p>
           </Reveal>
+
           <Reveal delay={0.08}>
-            <div className="filter-row">
-              {categories.map((item) => (
-                <button key={item} type="button" onClick={() => setCategory(item)} className={`filter-chip ${category === item ? 'is-active' : ''}`}>
-                  {item}
+            <div className="flex-between mb-12">
+              <div className="filter-row" style={{ margin: 0 }}>
+                {categories.map((item) => (
+                  <button key={item} type="button" onClick={() => setCategory(item)} className={`filter-chip ${category === item ? 'is-active' : ''}`}>
+                    {item}
+                  </button>
+                ))}
+              </div>
+              {isAdmin && (
+                <button onClick={() => openManage()} className="btn btn-sm btn-minimalist" style={{ border: '1px solid hsl(var(--border))', borderRadius: '0.75rem', padding: '0.5rem 1rem' }}>
+                  <Plus size={16} /> New Program
                 </button>
-              ))}
+              )}
             </div>
           </Reveal>
-          <h2 className="sr-only">Available courses</h2>
+
           <div className="card-grid card-grid-3">
             {filtered.map((course, index) => {
+              const Icon = iconMap[course.icon] || Terminal;
               return (
-                <Reveal key={course.title} delay={index * 0.05}>
+                <Reveal key={course.id || course.title} delay={index * 0.05}>
                   <div className="course-card">
                     <div className="course-card-bar" />
                     <div className="course-card-body">
-                      <div className="card-header-inline">
-                        <course.icon className="info-icon" strokeWidth={1.5} />
-                        <h3>{course.title}</h3>
+                      <div className="flex-between mb-4">
+                        <div className="flex gap-3 align-center">
+                          <div className="icon-badge">
+                            <Icon size={20} strokeWidth={1.5} />
+                          </div>
+                          <h3 className="course-title-small">{course.title}</h3>
+                        </div>
+                        {isAdmin && (
+                          <div className="admin-actions">
+                            <button onClick={() => openManage(course)} className="icon-btn-small" title="Edit"><Edit2 size={14} /></button>
+                            <button onClick={() => setIsConfirmingDelete(course.id || null)} className="icon-btn-small text-danger" title="Delete"><Trash2 size={14} /></button>
+                          </div>
+                        )}
                       </div>
-                      <div className="feature-list">
-                        {course.highlights.map((item) => (
-                          <div key={item} className="feature-item">
+                      <div className="feature-list mb-6">
+                        {course.highlights?.slice(0, 3).map((item: string) => (
+                          <div key={item} className="feature-item" style={{ fontWeight: 500 }}>
                             <Check className="feature-check" />
                             {item}
                           </div>
                         ))}
                       </div>
-                      <div className="course-card-duration">
-                        <span className="duration-chip">{course.duration}</span>
-                      </div>
-                      <div className="course-card-actions">
-                        <button type="button" className="inline-link inline-link-button" onClick={() => openCourseDetails(course)}>
-                          Learn more <ArrowRight className="inline-link-icon" />
+                      <div className="flex-between mt-auto">
+                        <span className="duration-chip" style={{ fontWeight: 600 }}>{course.duration}</span>
+                        <button type="button" className="inline-link" style={{ border: 'none', background: 'transparent', fontWeight: 600 }} onClick={() => setSelectedCourse(course)}>
+                          View Details <ArrowRight size={14} />
                         </button>
-                        <a href={getWhatsappLink(course.title)} target="_blank" rel="noreferrer" className="whatsapp-link whatsapp-link-card">
-                          <MessageCircle className="inline-link-icon" />
-                          Chat on WhatsApp
-                        </a>
                       </div>
                     </div>
                   </div>
@@ -192,97 +220,138 @@ export default function CoursesPage() {
         </div>
       </section>
 
-      <dialog
-        ref={dialogRef}
-        className="course-modal"
-        onClose={closeCourseDetails}
-        onClick={(event) => {
-          if (event.target === event.currentTarget) {
-            closeCourseDetails();
-          }
-        }}
-      >
-        {selectedCourse ? (
-          <div className="course-modal-panel" aria-labelledby="course-modal-title" aria-describedby="course-modal-desc">
+      {/* View Course Details Dialog */}
+      <dialog ref={dialogRef} className="course-modal" onClose={() => setSelectedCourse(null)}>
+        {selectedCourse && (
+          <div className="course-modal-panel">
             <div className="course-modal-header">
               <div>
                 <span className="course-modal-kicker">{selectedCourse.cat}</span>
-                <h2 id="course-modal-title" className="course-modal-title">
-                  {selectedCourse.title}
-                </h2>
-                <p id="course-modal-desc" className="course-modal-copy">
-                  {selectedCourse.timeline}
-                </p>
+                <h2 className="course-modal-title" style={{ fontWeight: 700 }}>{selectedCourse.title}</h2>
+                <p className="course-modal-copy">{selectedCourse.timeline}</p>
               </div>
-              <button type="button" className="course-modal-close" onClick={closeCourseDetails} aria-label="Close course details" autoFocus>
-                <X />
-              </button>
+              <button type="button" className="course-modal-close" onClick={() => setSelectedCourse(null)}><X /></button>
             </div>
-
-            <div className="course-modal-highlights">
-              {selectedCourse.highlights.map((item) => (
-                <span key={item} className="course-modal-highlight">
-                  <Check className="feature-check" />
-                  {item}
-                </span>
-              ))}
-            </div>
-
-            <div className="course-detail-panel course-detail-panel-modal">
-              <div className="course-detail-block">
-                <p className="course-detail-label">Curriculum</p>
-                <ul className="course-detail-list">
-                  {selectedCourse.curriculum.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
+            
+            <div style={{ padding: '0 2rem 2rem' }}>
+              <div className="course-modal-highlights" style={{ marginBottom: '1.5rem' }}>
+                {selectedCourse.highlights?.map((item: string) => (
+                  <span key={item} className="course-modal-highlight"><Check className="feature-check" />{item}</span>
+                ))}
               </div>
-              <div className="course-detail-block">
-                <p className="course-detail-label">Duration</p>
-                <p className="course-detail-copy">{selectedCourse.duration}</p>
-              </div>
-            </div>
 
-            <div className="course-modal-grid">
-              <div className="course-detail-panel course-detail-panel-modal">
-                <div className="course-detail-block">
-                  <p className="course-detail-label">What you will learn</p>
-                  <ul className="course-detail-list">
-                    {selectedCourse.learn.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
+              <div className="course-modal-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
+                <div className="course-detail-panel course-detail-panel-modal">
+                  <p className="course-detail-label">CURRICULUM OVERVIEW</p>
+                  <ul className="course-detail-list">{selectedCourse.curriculum?.map((item: string) => <li key={item}>{item}</li>)}</ul>
                 </div>
-              </div>
 
-              <div className="course-detail-panel course-detail-panel-modal">
-                <div className="course-detail-block">
-                  <p className="course-detail-label">By the end of the course</p>
-                  <ul className="course-detail-list">
-                    {selectedCourse.outcomes.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
+                <div className="course-modal-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                  <div className="course-detail-panel course-detail-panel-modal">
+                    <p className="course-detail-label">KEY OBJECTIVES</p>
+                    <ul className="course-detail-list">{selectedCourse.learn?.map((item: string) => <li key={item}>{item}</li>)}</ul>
+                  </div>
+                  <div className="course-detail-panel course-detail-panel-modal">
+                    <p className="course-detail-label">CAREER OUTCOMES</p>
+                    <ul className="course-detail-list">{selectedCourse.outcomes?.map((item: string) => <li key={item}>{item}</li>)}</ul>
+                  </div>
                 </div>
               </div>
             </div>
-
-            <div className="course-detail-actions course-detail-actions-modal">
-              <a href={getWhatsappLink(selectedCourse.title)} target="_blank" rel="noreferrer" className="btn btn-pill btn-sm">
-                Enroll Now
-              </a>
-              <button type="button" className="course-payment-button" disabled aria-disabled="true">
-                <CreditCard className="course-payment-icon" />
-                <span>Pay Securely</span>
-                <span className="course-payment-status">
-                  <Lock className="course-payment-lock" />
-                  Phase 2
-                </span>
-              </button>
-            </div>
-            <p className="course-payment-note">Online Razorpay checkout will be enabled in phase 2.</p>
           </div>
-        ) : null}
+        )}
+      </dialog>
+
+      {/* Admin Manage Course Dialog */}
+      <dialog ref={manageDialogRef} className="course-modal" onClose={() => setIsManaging(false)}>
+        <div className="admin-modal-panel">
+          <div className="admin-header">
+            <h2>{manageData.id ? 'Refine Course' : 'Create New Program'}</h2>
+            <button type="button" className="course-modal-close" onClick={() => setIsManaging(false)}><X /></button>
+          </div>
+          
+          <form onSubmit={handleSaveCourse}>
+            <div className="admin-form-body">
+              <div className="form-section">
+                <span className="form-section-title">General Information</span>
+                <div className="admin-form-grid">
+                  <div className="admin-field">
+                    <label>Course Title</label>
+                    <input className="admin-input" type="text" value={manageData.title} onChange={e => setManageData({...manageData, title: e.target.value})} required placeholder="e.g. Advanced Cloud Computing" />
+                  </div>
+                  <div className="admin-field">
+                    <label>Category</label>
+                    <select className="admin-select" value={manageData.cat} onChange={e => setManageData({...manageData, cat: e.target.value})}>
+                      {categories.filter(c => c !== 'All').map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div className="admin-field">
+                    <label>Duration</label>
+                    <input className="admin-input" type="text" value={manageData.duration} onChange={e => setManageData({...manageData, duration: e.target.value})} required placeholder="e.g. 6 Months" />
+                  </div>
+                  <div className="admin-field">
+                    <label>Display Icon</label>
+                    <select className="admin-select" value={manageData.icon} onChange={e => setManageData({...manageData, icon: e.target.value})}>
+                      {Object.keys(iconMap).map(i => <option key={i} value={i}>{i}</option>)}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="form-section">
+                <span className="form-section-title">Timeline & Structure</span>
+                <div className="admin-field">
+                  <label>Timeline Description</label>
+                  <textarea className="admin-textarea" value={manageData.timeline} onChange={e => setManageData({...manageData, timeline: e.target.value})} required placeholder="Describe the course schedule and major milestones..." />
+                </div>
+              </div>
+
+              <div className="form-section">
+                <span className="form-section-title">Content & Outcomes</span>
+                <div className="admin-form-grid">
+                  <div className="admin-field">
+                    <label>Highlights (One per line)</label>
+                    <textarea className="admin-textarea" value={manageData.highlights} onChange={e => setManageData({...manageData, highlights: e.target.value})} placeholder="Feature 1&#10;Feature 2" />
+                  </div>
+                  <div className="admin-field">
+                    <label>Curriculum (One per line)</label>
+                    <textarea className="admin-textarea" value={manageData.curriculum} onChange={e => setManageData({...manageData, curriculum: e.target.value})} placeholder="Module 1&#10;Module 2" />
+                  </div>
+                  <div className="admin-field">
+                    <label>Learning Objectives (One per line)</label>
+                    <textarea className="admin-textarea" value={manageData.learn} onChange={e => setManageData({...manageData, learn: e.target.value})} placeholder="Objective 1&#10;Objective 2" />
+                  </div>
+                  <div className="admin-field">
+                    <label>Career Outcomes (One per line)</label>
+                    <textarea className="admin-textarea" value={manageData.outcomes} onChange={e => setManageData({...manageData, outcomes: e.target.value})} placeholder="Role 1&#10;Role 2" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="admin-footer">
+              <button type="button" className="btn-admin-cancel" onClick={() => setIsManaging(false)}>Cancel</button>
+              <button type="submit" className="btn-admin-save">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </dialog>
+
+      {/* Double Confirmation Delete Dialog */}
+      <dialog ref={confirmDialogRef} className="course-modal" onClose={() => setIsConfirmingDelete(null)}>
+        <div className="confirm-modal-panel glass">
+          <div className="confirm-icon-wrap">
+            <Trash2 size={32} />
+          </div>
+          <h2 className="confirm-title">Are you sure?</h2>
+          <p className="confirm-text">
+            This action will permanently delete the course and all associated data. This cannot be undone.
+          </p>
+          <div className="confirm-actions">
+            <button className="btn btn-ghost flex-1" onClick={() => setIsConfirmingDelete(null)}>No, Cancel</button>
+            <button className="btn btn-danger flex-1" onClick={confirmDelete}>Yes, Delete</button>
+          </div>
+        </div>
       </dialog>
     </main>
   );

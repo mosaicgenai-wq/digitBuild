@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, PropsWithChildren } from 'react';
 import { Link, type LinkProps } from 'react-router-dom';
 
-type Variant = 'pill' | 'pill-outline';
+type Variant = 'pill' | 'pill-outline' | 'ghost';
 type Size = 'sm' | 'lg';
 
 function getClassName(variant: Variant = 'pill', size: Size = 'lg', block = false) {
