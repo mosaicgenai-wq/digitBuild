@@ -23,6 +23,7 @@ export function Navbar() {
   const [theme, setTheme] = useState<'light' | 'dark'>(() =>
     document.documentElement.classList.contains('dark') ? 'dark' : 'light',
   );
+  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 20);
@@ -34,6 +35,12 @@ export function Navbar() {
   useEffect(() => {
     setIsOpen(false);
   }, [location.pathname, location.hash]);
+
+  function handleLogout() {
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('userRole');
+    window.location.href = '/';
+  }
 
   function toggleTheme() {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
@@ -78,7 +85,16 @@ export function Navbar() {
               {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
             </button>
 
-            <div className="desktop-only">
+            <div className="nav-actions-desktop desktop-only" style={{ gap: '1rem', display: 'flex', alignItems: 'center' }}>
+              {isAuthenticated ? (
+                <button onClick={handleLogout} className="btn-minimalist">
+                  Logout
+                </button>
+              ) : (
+                <ButtonLink to="/login" variant="ghost" className="btn-minimalist">
+                  Login
+                </ButtonLink>
+              )}
               <ButtonLink to="/contact" size="sm">
                 Get Started
               </ButtonLink>
@@ -104,6 +120,15 @@ export function Navbar() {
                 {link.label}
               </NavLink>
             ))}
+            {isAuthenticated ? (
+              <button onClick={handleLogout} className="mobile-menu-link text-left" style={{ background: 'transparent', border: 'none', padding: '1rem 1.5rem' }}>
+                Logout
+              </button>
+            ) : (
+              <ButtonLink to="/login" variant="ghost" size="lg">
+                Login
+              </ButtonLink>
+            )}
             <ButtonLink to="/contact" size="lg">
               Get Started
             </ButtonLink>
