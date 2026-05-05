@@ -6,6 +6,7 @@ import { useToast } from '../components/toast/ToastProvider';
 import { Reveal } from '../components/ui/Reveal';
 import { SectionEyebrow, SectionTitle } from '../components/ui/SectionIntro';
 import { getCareerPackageBySlug } from '../lib/payment';
+import { API_BASE } from '../config/api';
 
 type PaymentForm = {
   name: string;
@@ -134,7 +135,7 @@ export default function PlacementPaymentPage() {
         throw new Error('Unable to load Razorpay checkout.');
       }
 
-      const createOrderResponse = await fetch('/api/payments/create-order', {
+      const createOrderResponse = await fetch(`${API_BASE}/api/payments/create-order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -173,7 +174,7 @@ export default function PlacementPaymentPage() {
           color: '#4f6ef7',
         },
         handler: async (response) => {
-          const verifyResponse = await fetch('/api/payments/verify', {
+          const verifyResponse = await fetch(`${API_BASE}/api/payments/verify`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

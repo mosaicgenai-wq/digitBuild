@@ -3,6 +3,7 @@ import { Lock, Mail, User, Eye, EyeOff, Phone, ChevronDown } from 'lucide-react'
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Reveal } from '../components/ui/Reveal';
+import { API_BASE } from '../config/api';
 
 const countryCodes = [
   { code: '+91', country: 'India' },
@@ -37,7 +38,7 @@ export default function LoginPage() {
     setIsLoading(true);
     setError(null);
 
-    const endpoint = mode === 'login' ? '/api/login' : '/api/register';
+    const endpoint = mode === 'login' ? `${API_BASE}/api/login` : `${API_BASE}/api/register`;
 
     try {
       const response = await fetch(endpoint, {
