@@ -2,6 +2,7 @@ import { ArrowRight, Atom, ChartColumn, Check, CreditCard, Database, Edit2, Lock
 import { useEffect, useRef, useState } from 'react';
 import { Reveal } from '../components/ui/Reveal';
 import { SectionEyebrow, SectionTitle } from '../components/ui/SectionIntro';
+import { API_BASE } from '../config/api';
 
 const categories = ['All', 'Development', 'Testing', 'Analytics'];
 const whatsappNumber = '+917385490573';
@@ -45,7 +46,7 @@ export default function CoursesPage() {
 
   const fetchCourses = async () => {
     try {
-      const res = await fetch('/api/courses');
+      const res = await fetch(`${API_BASE}/api/courses`);
       const data = await res.json();
       setCourses(data);
     } catch (err) {
@@ -98,7 +99,7 @@ export default function CoursesPage() {
     };
 
     const method = manageData.id ? 'PUT' : 'POST';
-    const url = manageData.id ? `/api/courses/${manageData.id}` : '/api/courses';
+    const url = manageData.id ? `${API_BASE}/api/courses/${manageData.id}` : `${API_BASE}/api/courses`;
 
     try {
       const res = await fetch(url, {
@@ -118,7 +119,7 @@ export default function CoursesPage() {
   const confirmDelete = async () => {
     if (!isConfirmingDelete) return;
     try {
-      const res = await fetch(`/api/courses/${isConfirmingDelete}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE}/api/courses/${isConfirmingDelete}`, { method: 'DELETE' });
       if (res.ok) {
         setIsConfirmingDelete(null);
         fetchCourses();

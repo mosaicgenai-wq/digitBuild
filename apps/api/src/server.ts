@@ -49,7 +49,12 @@ const courseSchema = z.object({
 });
 
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(cors());
+app.use(cors({
+  origin: process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+    : true,
+  credentials: true,
+}));
 app.use(compression());
 app.use(express.json());
 

@@ -10,7 +10,8 @@ export type ContactPayload = {
 };
 
 export async function submitContactForm(payload: ContactPayload) {
-  const response = await fetch('/api/contact', {
+  const { API_BASE } = await import('../config/api');
+  const response = await fetch(`${API_BASE}/api/contact`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
