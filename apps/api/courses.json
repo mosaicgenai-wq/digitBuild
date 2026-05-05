@@ -5,11 +5,27 @@
     "icon": "Terminal",
     "cat": "Development",
     "duration": "6 Months",
-    "highlights": ["MERN Stack", "APIs & Deployment", "Real Projects"],
+    "highlights": [
+      "MERN Stack",
+      "APIs & Deployment",
+      "Real Projects"
+    ],
     "timeline": "24 weeks with live sessions, projects, and placement prep.",
-    "curriculum": ["HTML, CSS, JavaScript fundamentals", "React, Node.js, Express, MongoDB", "Live capstone, Git, deployment, interview readiness"],
-    "learn": ["Build responsive frontend interfaces with React", "Design REST APIs and connect databases securely", "Handle authentication, deployment, and version control workflows"],
-    "outcomes": ["Portfolio-ready full stack projects", "Confidence in frontend + backend interview rounds", "Job-ready understanding of production web app architecture"]
+    "curriculum": [
+      "HTML, CSS, JavaScript fundamentals",
+      "React, Node.js, Express, MongoDB",
+      "Live capstone, Git, deployment, interview readiness"
+    ],
+    "learn": [
+      "Build responsive frontend interfaces with React",
+      "Design REST APIs and connect databases securely",
+      "Handle authentication, deployment, and version control workflows"
+    ],
+    "outcomes": [
+      "Portfolio-ready full stack projects",
+      "Confidence in frontend + backend interview rounds",
+      "Job-ready understanding of production web app architecture"
+    ]
   },
   {
     "id": "2",
@@ -17,11 +33,27 @@
     "icon": "Atom",
     "cat": "Development",
     "duration": "3 Months",
-    "highlights": ["Hooks & State", "Next.js Basics", "Portfolio Build"],
+    "highlights": [
+      "Hooks & State",
+      "Next.js Basics",
+      "Portfolio Build"
+    ],
     "timeline": "12 weeks focused on frontend projects and modern React workflows.",
-    "curriculum": ["React foundations and component architecture", "Routing, forms, APIs, state management", "Portfolio app, optimization, deployment basics"],
-    "learn": ["Create reusable components and scalable UI structure", "Work with APIs, forms, routing, and client-side state", "Understand performance basics and modern frontend workflows"],
-    "outcomes": ["A polished frontend portfolio app", "Stronger React-specific project discussions", "Readiness for junior frontend developer roles"]
+    "curriculum": [
+      "React foundations and component architecture",
+      "Routing, forms, APIs, state management",
+      "Portfolio app, optimization, deployment basics"
+    ],
+    "learn": [
+      "Create reusable components and scalable UI structure",
+      "Work with APIs, forms, routing, and client-side state",
+      "Understand performance basics and modern frontend workflows"
+    ],
+    "outcomes": [
+      "A polished frontend portfolio app",
+      "Stronger React-specific project discussions",
+      "Readiness for junior frontend developer roles"
+    ]
   },
   {
     "id": "3",
@@ -29,11 +61,27 @@
     "icon": "Terminal",
     "cat": "Development",
     "duration": "4 Months",
-    "highlights": ["Core Python", "Django", "Data Structures"],
+    "highlights": [
+      "Core Python",
+      "Django",
+      "Data Structures"
+    ],
     "timeline": "16 weeks from Python basics to backend project delivery.",
-    "curriculum": ["Core Python and problem solving", "Django, REST APIs, database integration", "Mini projects, debugging, coding interview practice"],
-    "learn": ["Write clean Python scripts and solve programming problems", "Build backend applications with Django and APIs", "Use data structures and debugging practices effectively"],
-    "outcomes": ["Strong programming fundamentals", "Hands-on backend project experience", "Better preparation for Python and backend interviews"]
+    "curriculum": [
+      "Core Python and problem solving",
+      "Django, REST APIs, database integration",
+      "Mini projects, debugging, coding interview practice"
+    ],
+    "learn": [
+      "Write clean Python scripts and solve programming problems",
+      "Build backend applications with Django and APIs",
+      "Use data structures and debugging practices effectively"
+    ],
+    "outcomes": [
+      "Strong programming fundamentals",
+      "Hands-on backend project experience",
+      "Better preparation for Python and backend interviews"
+    ]
   },
   {
     "id": "4",
@@ -41,11 +89,27 @@
     "icon": "Smartphone",
     "cat": "Development",
     "duration": "5 Months",
-    "highlights": ["React Native", "Cross-platform", "App Store Ready"],
+    "highlights": [
+      "React Native",
+      "Cross-platform",
+      "App Store Ready"
+    ],
     "timeline": "20 weeks with hands-on mobile UI, API, and release preparation.",
-    "curriculum": ["React Native fundamentals and navigation", "Device APIs, forms, auth, backend integration", "Production-style app build and publishing checklist"],
-    "learn": ["Build mobile UI flows for Android and iOS from one codebase", "Integrate authentication, APIs, and native device capabilities", "Prepare apps for testing, release, and deployment reviews"],
-    "outcomes": ["A real cross-platform mobile project", "Understanding of production mobile app workflows", "Readiness for React Native developer opportunities"]
+    "curriculum": [
+      "React Native fundamentals and navigation",
+      "Device APIs, forms, auth, backend integration",
+      "Production-style app build and publishing checklist"
+    ],
+    "learn": [
+      "Build mobile UI flows for Android and iOS from one codebase",
+      "Integrate authentication, APIs, and native device capabilities",
+      "Prepare apps for testing, release, and deployment reviews"
+    ],
+    "outcomes": [
+      "A real cross-platform mobile project",
+      "Understanding of production mobile app workflows",
+      "Readiness for React Native developer opportunities"
+    ]
   },
   {
     "id": "5",
@@ -53,11 +117,27 @@
     "icon": "TestTube",
     "cat": "Testing",
     "duration": "4 Months",
-    "highlights": ["Selenium & Cypress", "API Testing", "CI/CD"],
+    "highlights": [
+      "Selenium & Cypress",
+      "API Testing",
+      "CI/CD"
+    ],
     "timeline": "16 weeks of manual testing, automation, and reporting workflows.",
-    "curriculum": ["Testing concepts, bug lifecycle, test cases", "Selenium, Cypress, API and regression testing", "Framework setup, CI basics, mock interview prep"],
-    "learn": ["Write test cases, bug reports, and regression plans", "Automate browser and API testing with modern tools", "Understand QA workflows in agile teams and delivery pipelines"],
-    "outcomes": ["Practical testing and automation exposure", "Experience discussing QA scenarios and defects clearly", "Readiness for manual and automation QA roles"]
+    "curriculum": [
+      "Testing concepts, bug lifecycle, test cases",
+      "Selenium, Cypress, API and regression testing",
+      "Framework setup, CI basics, mock interview prep"
+    ],
+    "learn": [
+      "Write test cases, bug reports, and regression plans",
+      "Automate browser and API testing with modern tools",
+      "Understand QA workflows in agile teams and delivery pipelines"
+    ],
+    "outcomes": [
+      "Practical testing and automation exposure",
+      "Experience discussing QA scenarios and defects clearly",
+      "Readiness for manual and automation QA roles"
+    ]
   },
   {
     "id": "6",
@@ -65,11 +145,27 @@
     "icon": "ChartColumn",
     "cat": "Analytics",
     "duration": "3 Months",
-    "highlights": ["Excel & SQL", "Power BI", "Case Studies"],
+    "highlights": [
+      "Excel & SQL",
+      "Power BI",
+      "Case Studies"
+    ],
     "timeline": "12 weeks focused on dashboards, SQL, and business reporting.",
-    "curriculum": ["Excel, SQL, KPIs, and reporting basics", "Power BI dashboards and stakeholder storytelling", "Case studies, interview tasks, portfolio review"],
-    "learn": ["Work with business datasets using Excel and SQL", "Create dashboards and reports for decision-making", "Present insights in a way that non-technical stakeholders understand"],
-    "outcomes": ["Case-study based analytics portfolio pieces", "Stronger KPI, reporting, and dashboard fundamentals", "Preparation for analyst and reporting roles"]
+    "curriculum": [
+      "Excel, SQL, KPIs, and reporting basics",
+      "Power BI dashboards and stakeholder storytelling",
+      "Case studies, interview tasks, portfolio review"
+    ],
+    "learn": [
+      "Work with business datasets using Excel and SQL",
+      "Create dashboards and reports for decision-making",
+      "Present insights in a way that non-technical stakeholders understand"
+    ],
+    "outcomes": [
+      "Case-study based analytics portfolio pieces",
+      "Stronger KPI, reporting, and dashboard fundamentals",
+      "Preparation for analyst and reporting roles"
+    ]
   },
   {
     "id": "7",
@@ -77,11 +173,27 @@
     "icon": "Database",
     "cat": "Analytics",
     "duration": "4 Months",
-    "highlights": ["Python for Data", "Statistics", "Real Datasets"],
+    "highlights": [
+      "Python for Data",
+      "Statistics",
+      "Real Datasets"
+    ],
     "timeline": "16 weeks of analytics workflows, real datasets, and insights reporting.",
-    "curriculum": ["Python, Excel, SQL, and exploratory analysis", "Statistics, data cleaning, and visualization", "Projects with dashboards, insights, and presentation practice"],
-    "learn": ["Clean, analyze, and visualize data using common analytics tools", "Use statistics to interpret patterns and validate findings", "Turn raw data into business-friendly reports and dashboards"],
-    "outcomes": ["Hands-on analytics projects with real datasets", "Practical experience with end-to-end analysis workflow", "Readiness for data analyst entry-level interviews"]
+    "curriculum": [
+      "Python, Excel, SQL, and exploratory analysis",
+      "Statistics, data cleaning, and visualization",
+      "Projects with dashboards, insights, and presentation practice"
+    ],
+    "learn": [
+      "Clean, analyze, and visualize data using common analytics tools",
+      "Use statistics to interpret patterns and validate findings",
+      "Turn raw data into business-friendly reports and dashboards"
+    ],
+    "outcomes": [
+      "Hands-on analytics projects with real datasets",
+      "Practical experience with end-to-end analysis workflow",
+      "Readiness for data analyst entry-level interviews"
+    ]
   },
   {
     "id": "8",
@@ -89,10 +201,46 @@
     "icon": "Database",
     "cat": "Analytics",
     "duration": "6 Months",
-    "highlights": ["Machine Learning", "Deep Learning", "Capstone"],
+    "highlights": [
+      "Machine Learning",
+      "Deep Learning",
+      "Capstone"
+    ],
     "timeline": "24 weeks from data foundations to machine learning capstone work.",
-    "curriculum": ["Python, EDA, feature engineering, and statistics", "Machine learning, model evaluation, and deployment basics", "Capstone project, portfolio support, and interview prep"],
-    "learn": ["Build machine learning workflows from problem framing to evaluation", "Work with feature engineering, model selection, and experimentation", "Understand basic deployment and real-world data science decision making"],
-    "outcomes": ["A capstone that demonstrates full data science workflow", "Better understanding of ML concepts beyond tutorials", "Preparation for junior data science and ML analyst roles"]
+    "curriculum": [
+      "Python, EDA, feature engineering, and statistics",
+      "Machine learning, model evaluation, and deployment basics",
+      "Capstone project, portfolio support, and interview prep"
+    ],
+    "learn": [
+      "Build machine learning workflows from problem framing to evaluation",
+      "Work with feature engineering, model selection, and experimentation",
+      "Understand basic deployment and real-world data science decision making"
+    ],
+    "outcomes": [
+      "A capstone that demonstrates full data science workflow",
+      "Better understanding of ML concepts beyond tutorials",
+      "Preparation for junior data science and ML analyst roles"
+    ]
+  },
+  {
+    "id": "1778002763905",
+    "title": "abc",
+    "icon": "TestTube",
+    "cat": "Development",
+    "duration": "7 months",
+    "highlights": [
+      "abc"
+    ],
+    "timeline": "abc",
+    "curriculum": [
+      "abc"
+    ],
+    "learn": [
+      "abc"
+    ],
+    "outcomes": [
+      "abc"
+    ]
   }
 ]
