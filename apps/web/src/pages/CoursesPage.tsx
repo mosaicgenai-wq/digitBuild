@@ -4,6 +4,7 @@ import { Reveal } from '../components/ui/Reveal';
 import { SectionEyebrow, SectionTitle } from '../components/ui/SectionIntro';
 import { sanityClient } from '../lib/sanity';
 import { useSanityData } from '../lib/useSanityData';
+import { useToast } from '../components/toast/ToastProvider';
 
 const categories = ['All', 'Development', 'Testing', 'Analytics'];
 const whatsappNumber = '+917385490573';
@@ -28,6 +29,7 @@ interface Course {
 }
 
 export default function CoursesPage() {
+  const { showToast } = useToast();
   const { data: sanityCourses, loading, error } = useSanityData<Course[]>(`*[_type == "course"] | order(_createdAt desc)`);
   const [courses, setCourses] = useState<Course[]>([]);
   const [category, setCategory] = useState('All');
@@ -121,10 +123,10 @@ export default function CoursesPage() {
       }
       setIsManaging(false);
       await fetchCourses();
-      alert('Course saved successfully');
+      showToast('Course Saved', `${payload.title} has been updated successfully.`, 'success');
     } catch (err) {
       console.error('Sanity Error:', err);
-      alert('Failed to save course. Ensure your Sanity Token has write access.');
+      showToast('Save Failed', 'Could not save the course. Check your Sanity token permissions.', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -137,10 +139,10 @@ export default function CoursesPage() {
       await sanityClient.delete(isConfirmingDelete);
       setIsConfirmingDelete(null);
       await fetchCourses();
-      alert('Course deleted successfully');
+      showToast('Course Deleted', 'The program has been removed from the catalog.', 'success');
     } catch (err) {
       console.error('Delete Error:', err);
-      alert('Failed to delete course. Check your Sanity token permissions.');
+      showToast('Delete Failed', 'You do not have permission to delete this content.', 'error');
     } finally {
       setIsSaving(false);
     }
