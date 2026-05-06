@@ -63,7 +63,7 @@ export default function ContactPage() {
 
     setLoading(true);
     window.open(getWhatsappLink(form), '_blank', 'noopener,noreferrer');
-    showToast('Sent to WhatsApp', 'Your message is ready to send on WhatsApp.');
+    showToast('Sent to WhatsApp', 'Your message is ready to send on WhatsApp.', 'success');
     setForm(initialValues);
     setErrors({});
     setLoading(false);
