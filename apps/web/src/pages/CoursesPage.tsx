@@ -121,6 +121,7 @@ export default function CoursesPage() {
       }
       setIsManaging(false);
       await fetchCourses();
+      alert('Course saved successfully');
     } catch (err) {
       console.error('Sanity Error:', err);
       alert('Failed to save course. Ensure your Sanity Token has write access.');
@@ -135,9 +136,11 @@ export default function CoursesPage() {
     try {
       await sanityClient.delete(isConfirmingDelete);
       setIsConfirmingDelete(null);
-      fetchCourses();
+      await fetchCourses();
+      alert('Course deleted successfully');
     } catch (err) {
-      alert('Failed to delete course');
+      console.error('Delete Error:', err);
+      alert('Failed to delete course. Check your Sanity token permissions.');
     } finally {
       setIsSaving(false);
     }

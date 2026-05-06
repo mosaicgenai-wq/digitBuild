@@ -11,7 +11,7 @@ export const sanityClient = createClient({
   projectId: projectId ?? '',
   dataset: dataset ?? '',
   apiVersion,
-  useCdn: import.meta.env.PROD,
+  useCdn: false, // Set to false to see updates immediately after saving
   token: token || undefined,
 });
 
