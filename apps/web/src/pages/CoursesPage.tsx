@@ -2,7 +2,8 @@ import { ArrowRight, Atom, ChartColumn, Check, CreditCard, Database, Edit2, Lock
 import { useEffect, useRef, useState } from 'react';
 import { Reveal } from '../components/ui/Reveal';
 import { SectionEyebrow, SectionTitle } from '../components/ui/SectionIntro';
-import { API_BASE } from '../config/api';
+import { sanityClient } from '../lib/sanity';
+import { useSanityData } from '../lib/useSanityData';
 
 const categories = ['All', 'Development', 'Testing', 'Analytics'];
 const whatsappNumber = '+917385490573';
@@ -12,6 +13,8 @@ const iconMap: Record<string, any> = {
 };
 
 interface Course {
+  _id?: string;
+  _createdAt?: string;
   id?: string;
   title: string;
   icon: string;
@@ -25,11 +28,13 @@ interface Course {
 }
 
 export default function CoursesPage() {
+  const { data: sanityCourses, loading, error } = useSanityData<Course[]>(`*[_type == "course"] | order(_createdAt desc)`);
   const [courses, setCourses] = useState<Course[]>([]);
   const [category, setCategory] = useState('All');
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isManaging, setIsManaging] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [manageData, setManageData] = useState<any>({
     title: '', icon: 'Terminal', cat: 'Development', duration: '', highlights: '', timeline: '', curriculum: '', learn: '', outcomes: ''
   });
@@ -41,14 +46,19 @@ export default function CoursesPage() {
 
   useEffect(() => {
     setIsAdmin(localStorage.getItem('userRole') === 'admin');
-    fetchCourses();
   }, []);
+
+  useEffect(() => {
+    if (sanityCourses) {
+      // Ensure each course has an id property for compatibility
+      setCourses(sanityCourses.map(c => ({ ...c, id: c.id || c._id })));
+    }
+  }, [sanityCourses]);
 
   const fetchCourses = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/courses`);
-      const data = await res.json();
-      setCourses(data);
+      const data = await sanityClient.fetch<Course[]>(`*[_type == "course"] | order(_createdAt desc)`);
+      setCourses(data.map((c) => ({ ...c, id: c.id || c._id })));
     } catch (err) {
       console.error('Failed to fetch courses');
     }
@@ -88,44 +98,48 @@ export default function CoursesPage() {
 
   const handleSaveCourse = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSaving(true);
     
-    // Prepare data by splitting newline strings back into arrays
     const payload = {
-      ...manageData,
+      _type: 'course',
+      title: manageData.title,
+      icon: manageData.icon,
+      cat: manageData.cat,
+      duration: manageData.duration,
+      timeline: manageData.timeline,
       highlights: manageData.highlights.split('\n').map((s: string) => s.trim()).filter(Boolean),
       curriculum: manageData.curriculum.split('\n').map((s: string) => s.trim()).filter(Boolean),
       learn: manageData.learn.split('\n').map((s: string) => s.trim()).filter(Boolean),
       outcomes: manageData.outcomes.split('\n').map((s: string) => s.trim()).filter(Boolean),
     };
 
-    const method = manageData.id ? 'PUT' : 'POST';
-    const url = manageData.id ? `${API_BASE}/api/courses/${manageData.id}` : `${API_BASE}/api/courses`;
-
     try {
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (res.ok) {
-        setIsManaging(false);
-        fetchCourses();
+      if (manageData._id) {
+        await sanityClient.patch(manageData._id).set(payload).commit();
+      } else {
+        await sanityClient.create(payload);
       }
+      setIsManaging(false);
+      await fetchCourses();
     } catch (err) {
-      alert('Failed to save course');
+      console.error('Sanity Error:', err);
+      alert('Failed to save course. Ensure your Sanity Token has write access.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const confirmDelete = async () => {
     if (!isConfirmingDelete) return;
+    setIsSaving(true);
     try {
-      const res = await fetch(`${API_BASE}/api/courses/${isConfirmingDelete}`, { method: 'DELETE' });
-      if (res.ok) {
-        setIsConfirmingDelete(null);
-        fetchCourses();
-      }
+      await sanityClient.delete(isConfirmingDelete);
+      setIsConfirmingDelete(null);
+      fetchCourses();
     } catch (err) {
       alert('Failed to delete course');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -177,7 +191,20 @@ export default function CoursesPage() {
           </Reveal>
 
           <div className="card-grid card-grid-3">
-            {filtered.map((course, index) => {
+            {loading ? (
+              <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem' }}>
+                <p>Loading programs...</p>
+              </div>
+            ) : error ? (
+              <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem', color: 'hsl(var(--destructive))' }}>
+                <p>Error: {error}</p>
+                <p style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>Check your Sanity Project ID and Dataset in .env</p>
+              </div>
+            ) : filtered.length === 0 ? (
+              <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem' }}>
+                <p>No programs found for this category.</p>
+              </div>
+            ) : filtered.map((course, index) => {
               const Icon = iconMap[course.icon] || Terminal;
               return (
                 <Reveal key={course.id || course.title} delay={index * 0.05}>
@@ -331,8 +358,10 @@ export default function CoursesPage() {
             </div>
             
             <div className="admin-footer">
-              <button type="button" className="btn-admin-cancel" onClick={() => setIsManaging(false)}>Cancel</button>
-              <button type="submit" className="btn-admin-save">Save Changes</button>
+              <button type="button" className="btn-admin-cancel" onClick={() => setIsManaging(false)} disabled={isSaving}>Cancel</button>
+              <button type="submit" className="btn-admin-save" disabled={isSaving}>
+                {isSaving ? 'Saving...' : 'Save Changes'}
+              </button>
             </div>
           </form>
         </div>
@@ -349,8 +378,10 @@ export default function CoursesPage() {
             This action will permanently delete the course and all associated data. This cannot be undone.
           </p>
           <div className="confirm-actions">
-            <button className="btn btn-ghost flex-1" onClick={() => setIsConfirmingDelete(null)}>No, Cancel</button>
-            <button className="btn btn-danger flex-1" onClick={confirmDelete}>Yes, Delete</button>
+            <button className="btn btn-ghost flex-1" onClick={() => setIsConfirmingDelete(null)} disabled={isSaving}>No, Cancel</button>
+            <button className="btn btn-danger flex-1" onClick={confirmDelete} disabled={isSaving}>
+              {isSaving ? 'Deleting...' : 'Yes, Delete'}
+            </button>
           </div>
         </div>
       </dialog>

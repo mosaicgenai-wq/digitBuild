@@ -3,15 +3,27 @@ import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import path from 'node:path';
-import fs from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
+import { createClient } from '@sanity/client';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
 const port = Number(process.env.PORT ?? 3000);
 const isProduction = process.env.NODE_ENV === 'production';
+
+// Initialize Sanity Client
+const sanityClient = createClient({
+  projectId: process.env.SANITY_PROJECT_ID,
+  dataset: process.env.SANITY_DATASET || 'production',
+  apiVersion: process.env.SANITY_API_VERSION || '2025-01-01',
+  token: process.env.SANITY_TOKEN,
+  useCdn: false, // Set to false to ensure we always get fresh data and can write
+});
 
 const contactSchema = z.object({
   name: z.string().trim().min(1),
@@ -59,7 +71,7 @@ app.use(compression());
 app.use(express.json());
 
 app.get('/api/health', (_request, response) => {
-  response.json({ status: 'ok' });
+  response.json({ status: 'ok', storage: 'sanity' });
 });
 
 app.post('/api/contact', (request, response) => {
@@ -90,18 +102,16 @@ app.post('/api/login', async (request, response) => {
   const { username, password } = parsed.data;
 
   try {
-    const usersPath = path.resolve(__dirname, '../users.json');
-    const usersData = await fs.readFile(usersPath, 'utf-8');
-    const users = JSON.parse(usersData);
-
-    const user = users.find(
-      (u: any) => u.username === username && u.password === password
+    const user = await sanityClient.fetch(
+      `*[_type == "user" && username == $username && password == $password][0]`,
+      { username, password }
     );
 
     if (user) {
       return response.status(200).json({
         success: true,
         message: 'Login successful.',
+        username: user.username,
       });
     }
 
@@ -130,18 +140,23 @@ app.post('/api/register', async (request, response) => {
   const newUser = parsed.data;
 
   try {
-    const usersPath = path.resolve(__dirname, '../users.json');
-    const usersData = await fs.readFile(usersPath, 'utf-8');
-    const users = JSON.parse(usersData);
+    // Check if user exists
+    const existing = await sanityClient.fetch(
+      `*[_type == "user" && username == $username][0]`,
+      { username: newUser.username }
+    );
 
-    if (users.find((u: any) => u.username === newUser.username)) {
+    if (existing) {
       return response.status(409).json({
         message: 'Username already exists.',
       });
     }
 
-    users.push(newUser);
-    await fs.writeFile(usersPath, JSON.stringify(users, null, 2));
+    // Create user in Sanity
+    await sanityClient.create({
+      _type: 'user',
+      ...newUser,
+    });
 
     return response.status(201).json({
       success: true,
@@ -157,9 +172,8 @@ app.post('/api/register', async (request, response) => {
 
 app.get('/api/courses', async (_request, response) => {
   try {
-    const coursesPath = path.resolve(__dirname, '../courses.json');
-    const coursesData = await fs.readFile(coursesPath, 'utf-8');
-    response.json(JSON.parse(coursesData));
+    const courses = await sanityClient.fetch(`*[_type == "course"] | order(_createdAt desc)`);
+    response.json(courses);
   } catch (error) {
     response.status(500).json({ message: 'Failed to fetch courses.' });
   }
@@ -170,11 +184,10 @@ app.post('/api/courses', async (request, response) => {
   if (!parsed.success) return response.status(400).json({ message: 'Invalid course data.' });
 
   try {
-    const coursesPath = path.resolve(__dirname, '../courses.json');
-    const courses = JSON.parse(await fs.readFile(coursesPath, 'utf-8'));
-    const newCourse = { ...parsed.data, id: Date.now().toString() };
-    courses.push(newCourse);
-    await fs.writeFile(coursesPath, JSON.stringify(courses, null, 2));
+    const newCourse = await sanityClient.create({
+      _type: 'course',
+      ...parsed.data,
+    });
     response.status(201).json(newCourse);
   } catch (error) {
     response.status(500).json({ message: 'Failed to add course.' });
@@ -186,14 +199,11 @@ app.put('/api/courses/:id', async (request, response) => {
   if (!parsed.success) return response.status(400).json({ message: 'Invalid course data.' });
 
   try {
-    const coursesPath = path.resolve(__dirname, '../courses.json');
-    let courses = JSON.parse(await fs.readFile(coursesPath, 'utf-8'));
-    const index = courses.findIndex((c: any) => c.id === request.params.id);
-    if (index === -1) return response.status(404).json({ message: 'Course not found.' });
-
-    courses[index] = { ...parsed.data, id: request.params.id };
-    await fs.writeFile(coursesPath, JSON.stringify(courses, null, 2));
-    response.json(courses[index]);
+    const updated = await sanityClient
+      .patch(request.params.id)
+      .set(parsed.data)
+      .commit();
+    response.json(updated);
   } catch (error) {
     response.status(500).json({ message: 'Failed to update course.' });
   }
@@ -201,10 +211,7 @@ app.put('/api/courses/:id', async (request, response) => {
 
 app.delete('/api/courses/:id', async (request, response) => {
   try {
-    const coursesPath = path.resolve(__dirname, '../courses.json');
-    let courses = JSON.parse(await fs.readFile(coursesPath, 'utf-8'));
-    courses = courses.filter((c: any) => c.id !== request.params.id);
-    await fs.writeFile(coursesPath, JSON.stringify(courses, null, 2));
+    await sanityClient.delete(request.params.id);
     response.json({ message: 'Course deleted.' });
   } catch (error) {
     response.status(500).json({ message: 'Failed to delete course.' });
@@ -221,5 +228,5 @@ if (isProduction) {
 }
 
 app.listen(port, () => {
-  console.log(`DigitBuild API running on port ${port}`);
+  console.log(`DigitBuild API (Sanity-backed) running on port ${port}`);
 });
