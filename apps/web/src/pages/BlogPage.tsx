@@ -1,7 +1,10 @@
-import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { useState } from 'react';
+import { ArrowLeft, ArrowRight, Edit2, Plus, Trash2, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { Reveal } from '../components/ui/Reveal';
 import { SectionEyebrow, SectionTitle } from '../components/ui/SectionIntro';
+import { sanityClient } from '../lib/sanity';
+import { useSanityData } from '../lib/useSanityData';
+import { useToast } from '../components/toast/ToastProvider';
 
 const colors = [
   { label: 'Career Tips', color: 'tag-primary' },
@@ -9,7 +12,24 @@ const colors = [
   { label: 'Learning Guides', color: 'tag-amber' },
 ];
 
-const posts = [
+interface BlogSection {
+  heading: string;
+  paragraphs: string[];
+}
+
+interface BlogPost {
+  _id?: string;
+  _createdAt?: string;
+  id?: string;
+  title: string;
+  cat: string;
+  date: string;
+  excerpt: string;
+  intro: string;
+  sections: BlogSection[];
+}
+
+const posts: BlogPost[] = [
   {
     title: 'How to Build an ATS-Friendly Resume',
     cat: 'Career Tips',
@@ -202,8 +222,200 @@ function categoryClass(category: string) {
   return colors.find((item) => item.label === category)?.color ?? '';
 }
 
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
+function serializeSections(sections: BlogSection[] = []) {
+  return sections
+    .map((section) => [section.heading, ...section.paragraphs].filter(Boolean).join('\n'))
+    .join('\n\n');
+}
+
+function parseSections(value: string) {
+  return value
+    .split(/\n{2,}/)
+    .map((block) => {
+      const [heading, ...paragraphs] = block.split('\n').map((line) => line.trim()).filter(Boolean);
+      return heading ? { heading, paragraphs } : null;
+    })
+    .filter((section): section is BlogSection => Boolean(section));
+}
+
+function toDateInputValue(value = '') {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return new Date().toISOString().slice(0, 10);
+
+  return parsed.toISOString().slice(0, 10);
+}
+
+function formatDisplayDate(value: string) {
+  const parsed = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return value;
+
+  return parsed.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
 export default function BlogPage() {
-  const [selected, setSelected] = useState<(typeof posts)[number] | null>(null);
+  const { showToast } = useToast();
+  const { data: sanityPosts, loading, error } = useSanityData<BlogPost[]>(`*[_type == "blogPost"] | order(_createdAt desc)`);
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>(posts);
+  const [selected, setSelected] = useState<BlogPost | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isManaging, setIsManaging] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasSeededPosts, setHasSeededPosts] = useState(false);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState<string | null>(null);
+  const [manageData, setManageData] = useState<any>({
+    title: '',
+    cat: 'Career Tips',
+    date: '',
+    excerpt: '',
+    intro: '',
+    sections: '',
+  });
+
+  const manageDialogRef = useRef<HTMLDialogElement | null>(null);
+  const confirmDialogRef = useRef<HTMLDialogElement | null>(null);
+
+  useEffect(() => {
+    setIsAdmin(localStorage.getItem('isAuthenticated') === 'true' && localStorage.getItem('userRole') === 'admin');
+  }, []);
+
+  useEffect(() => {
+    if (sanityPosts && sanityPosts.length > 0) {
+      setBlogPosts(sanityPosts.map((post) => ({ ...post, id: post.id || post._id })));
+    }
+  }, [sanityPosts]);
+
+  useEffect(() => {
+    const seedDefaultPosts = async () => {
+      if (!isAdmin || hasSeededPosts || loading || !sanityPosts || sanityPosts.length > 0) return;
+      setHasSeededPosts(true);
+
+      try {
+        await Promise.all(
+          posts.map((post) =>
+            sanityClient.createIfNotExists({
+              ...post,
+              _id: `blogPost-${slugify(post.title)}`,
+              _type: 'blogPost',
+            }),
+          ),
+        );
+        await fetchBlogPosts();
+      } catch (err) {
+        console.error('Blog seed error:', err);
+      }
+    };
+
+    void seedDefaultPosts();
+  }, [hasSeededPosts, isAdmin, loading, sanityPosts]);
+
+  useEffect(() => {
+    const dialog = manageDialogRef.current;
+    if (!dialog) return;
+    if (isManaging) {
+      if (!dialog.open) dialog.showModal();
+    } else if (dialog.open) {
+      dialog.close();
+    }
+  }, [isManaging]);
+
+  useEffect(() => {
+    const dialog = confirmDialogRef.current;
+    if (!dialog) return;
+    if (isConfirmingDelete) {
+      if (!dialog.open) dialog.showModal();
+    } else if (dialog.open) {
+      dialog.close();
+    }
+  }, [isConfirmingDelete]);
+
+  const fetchBlogPosts = async () => {
+    try {
+      const data = await sanityClient.fetch<BlogPost[]>(`*[_type == "blogPost"] | order(_createdAt desc)`);
+      setBlogPosts(data.map((post) => ({ ...post, id: post.id || post._id })));
+    } catch (err) {
+      console.error('Failed to fetch blog posts');
+    }
+  };
+
+  const openManage = (post?: BlogPost) => {
+    if (post) {
+      setManageData({
+        ...post,
+        date: toDateInputValue(post.date),
+        sections: serializeSections(post.sections),
+      });
+    } else {
+      setManageData({
+        title: '',
+        cat: 'Career Tips',
+        date: new Date().toISOString().slice(0, 10),
+        excerpt: '',
+        intro: '',
+        sections: '',
+      });
+    }
+    setIsManaging(true);
+  };
+
+  const handleSavePost = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+
+    const payload = {
+      _type: 'blogPost',
+      title: manageData.title,
+      cat: manageData.cat,
+      date: formatDisplayDate(manageData.date),
+      excerpt: manageData.excerpt,
+      intro: manageData.intro,
+      sections: parseSections(manageData.sections),
+    };
+
+    try {
+      if (manageData._id) {
+        await sanityClient.patch(manageData._id).set(payload).commit();
+      } else {
+        await sanityClient.create(payload);
+      }
+      setIsManaging(false);
+      await fetchBlogPosts();
+      showToast('Blog Saved', `${payload.title} has been updated successfully.`, 'success');
+    } catch (err) {
+      console.error('Blog save error:', err);
+      showToast('Save Failed', 'Could not save the blog post. Check your Sanity token permissions.', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!isConfirmingDelete) return;
+    setIsSaving(true);
+    try {
+      await sanityClient.delete(isConfirmingDelete);
+      setIsConfirmingDelete(null);
+      await fetchBlogPosts();
+      showToast('Blog Deleted', 'The blog post has been removed.', 'success');
+    } catch (err) {
+      console.error('Blog delete error:', err);
+      showToast('Delete Failed', 'You do not have permission to delete this blog post.', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (selected) {
     return (
@@ -225,7 +437,7 @@ export default function BlogPage() {
               </div>
 
               <div className="article-body">
-                {selected.sections.map((section) => (
+                {selected.sections?.map((section) => (
                   <section key={section.heading} className="article-section">
                     <h2 className="article-section-title">{section.heading}</h2>
                     {section.paragraphs.map((paragraph) => (
@@ -250,26 +462,131 @@ export default function BlogPage() {
             <SectionTitle as="h1" className="mb-3">Insights &amp; guides</SectionTitle>
             <p className="page-hero-copy">Tips on careers, tech, and learning.</p>
           </Reveal>
+          {isAdmin && (
+            <div className="flex-between mb-12">
+              <span className="time-chip">Admin mode</span>
+              <button onClick={() => openManage()} className="btn btn-sm btn-minimalist" style={{ border: '1px solid hsl(var(--border))', borderRadius: '0.75rem', padding: '0.5rem 1rem' }}>
+                <Plus size={16} /> New Blog
+              </button>
+            </div>
+          )}
           <h2 className="sr-only">Latest blog posts</h2>
           <div className="card-grid card-grid-3">
-            {posts.map((post, index) => (
+            {loading ? (
+              <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem' }}>
+                <p>Loading blog posts...</p>
+              </div>
+            ) : error && blogPosts.length === 0 ? (
+              <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem', color: 'hsl(var(--destructive))' }}>
+                <p>Error: {error}</p>
+                <p style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>Showing local blog content when Sanity is unavailable.</p>
+              </div>
+            ) : blogPosts.map((post, index) => (
               <Reveal key={post.title} delay={index * 0.05}>
-                <button type="button" onClick={() => setSelected(post)} className="blog-card">
-                  <span className={`post-tag ${categoryClass(post.cat)}`}>{post.cat}</span>
+                <article className="blog-card">
+                  <div className="blog-card-top">
+                    <span className={`post-tag ${categoryClass(post.cat)}`}>{post.cat}</span>
+                    {isAdmin && post._id && (
+                      <div className="admin-actions">
+                        <button type="button" onClick={() => openManage(post)} className="icon-btn-small" title="Edit"><Edit2 size={14} /></button>
+                        <button type="button" onClick={() => setIsConfirmingDelete(post._id || null)} className="icon-btn-small text-danger" title="Delete"><Trash2 size={14} /></button>
+                      </div>
+                    )}
+                  </div>
                   <h3>{post.title}</h3>
                   <p className="blog-excerpt">{post.excerpt}</p>
                   <div className="blog-footer">
                     <span>{post.date}</span>
-                    <span className="inline-link">
+                    <button type="button" onClick={() => setSelected(post)} className="inline-link" style={{ border: 'none', background: 'transparent', padding: 0 }}>
                       Read <ArrowRight className="inline-link-icon" />
-                    </span>
+                    </button>
                   </div>
-                </button>
+                </article>
               </Reveal>
             ))}
           </div>
         </div>
       </section>
+
+      <dialog ref={manageDialogRef} className="course-modal" onClose={() => setIsManaging(false)}>
+        <div className="admin-modal-panel">
+          <div className="admin-header">
+            <h2>{manageData._id ? 'Refine Blog' : 'Create New Blog'}</h2>
+            <button type="button" className="course-modal-close" onClick={() => setIsManaging(false)}><X /></button>
+          </div>
+
+          <form onSubmit={handleSavePost}>
+            <div className="admin-form-body">
+              <div className="form-section">
+                <span className="form-section-title">Blog Information</span>
+                <div className="admin-form-grid">
+                  <div className="admin-field">
+                    <label>Blog Title</label>
+                    <input className="admin-input" type="text" value={manageData.title} onChange={e => setManageData({...manageData, title: e.target.value})} required placeholder="e.g. How to Build an ATS-Friendly Resume" />
+                  </div>
+                  <div className="admin-field">
+                    <label>Category</label>
+                    <select className="admin-select" value={manageData.cat} onChange={e => setManageData({...manageData, cat: e.target.value})}>
+                      {colors.map(item => <option key={item.label} value={item.label}>{item.label}</option>)}
+                    </select>
+                  </div>
+                  <div className="admin-field">
+                    <label>Date</label>
+                    <input className="admin-input" type="date" value={manageData.date} onChange={e => setManageData({...manageData, date: e.target.value})} required />
+                  </div>
+                  <div className="admin-field">
+                    <label>Excerpt</label>
+                    <input className="admin-input" type="text" value={manageData.excerpt} onChange={e => setManageData({...manageData, excerpt: e.target.value})} required placeholder="Short card summary" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="form-section">
+                <span className="form-section-title">Article Content</span>
+                <div className="admin-field">
+                  <label>Intro</label>
+                  <textarea className="admin-textarea" value={manageData.intro} onChange={e => setManageData({...manageData, intro: e.target.value})} required placeholder="Opening paragraph for the article..." />
+                </div>
+                <div className="admin-field" style={{ marginTop: '1rem' }}>
+                  <label>Sections</label>
+                  <textarea
+                    className="admin-textarea admin-textarea-tall"
+                    value={manageData.sections}
+                    onChange={e => setManageData({...manageData, sections: e.target.value})}
+                    required
+                    placeholder={'Section heading\nParagraph one\nParagraph two\n\nNext section heading\nParagraph one'}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="admin-footer">
+              <button type="button" className="btn-admin-cancel" onClick={() => setIsManaging(false)} disabled={isSaving}>Cancel</button>
+              <button type="submit" className="btn-admin-save" disabled={isSaving}>
+                {isSaving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </dialog>
+
+      <dialog ref={confirmDialogRef} className="course-modal" onClose={() => setIsConfirmingDelete(null)}>
+        <div className="confirm-modal-panel glass">
+          <div className="confirm-icon-wrap">
+            <Trash2 size={32} />
+          </div>
+          <h2 className="confirm-title">Are you sure?</h2>
+          <p className="confirm-text">
+            This action will permanently delete the blog post. This cannot be undone.
+          </p>
+          <div className="confirm-actions">
+            <button className="btn btn-ghost flex-1" onClick={() => setIsConfirmingDelete(null)} disabled={isSaving}>No, Cancel</button>
+            <button className="btn btn-danger flex-1" onClick={confirmDelete} disabled={isSaving}>
+              {isSaving ? 'Deleting...' : 'Yes, Delete'}
+            </button>
+          </div>
+        </div>
+      </dialog>
     </main>
   );
 }

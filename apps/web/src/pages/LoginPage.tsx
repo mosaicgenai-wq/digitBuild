@@ -50,8 +50,11 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
+        const role = typeof data.role === 'string' ? data.role : data.username === 'admin' || formData.username === 'admin' ? 'admin' : 'user';
+
         localStorage.setItem('isAuthenticated', 'true');
-        localStorage.setItem('userRole', data.username || formData.username);
+        localStorage.setItem('userRole', role);
+        localStorage.setItem('username', data.username || formData.username);
         navigate('/');
       } else {
         setError(data.message || 'Action failed');

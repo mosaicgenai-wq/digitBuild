@@ -1,4 +1,6 @@
 export type CareerPackage = {
+  _id?: string;
+  _createdAt?: string;
   slug: string;
   name: string;
   experience: string;

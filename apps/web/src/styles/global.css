@@ -1107,36 +1107,68 @@ p { margin: 0; }
 }
 
 .career-package-row {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(15.25rem, 16.75rem);
+  display: flex;
   align-items: stretch;
-  gap: 1rem;
+  gap: 0.75rem;
+  max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
-  min-height: 27rem;
-  max-height: 27rem;
-  padding-bottom: 0.15rem;
+  padding: 0.1rem 0.2rem 0.65rem;
   scroll-snap-type: x proximity;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.career-package-row::-webkit-scrollbar {
-  display: none;
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--primary) / 0.35) transparent;
+  -webkit-overflow-scrolling: touch;
 }
 
 .career-package-card {
+  position: relative;
   display: flex;
+  flex: 0 0 clamp(15.25rem, 24vw, 18rem);
   flex-direction: column;
   justify-content: flex-start;
-  height: 100%;
-  min-height: 100%;
-  max-height: 100%;
-  scroll-snap-align: start;
+  min-height: 16.25rem;
+  padding: 0.9rem;
   text-align: left;
   cursor: pointer;
+  overflow: hidden;
+  scroll-snap-align: start;
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.career-package-card h3 {
+  margin-top: 0.3rem;
+  color: hsl(var(--foreground));
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.career-package-card .course-detail-block + .course-detail-block {
+  margin-top: 0.75rem;
+}
+
+.career-package-card .course-detail-label {
+  margin-bottom: 0.32rem;
+  font-size: 0.72rem;
+}
+
+.career-package-card .course-detail-copy {
+  margin-top: 0.15rem;
+  color: hsl(var(--primary));
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.career-package-card .course-detail-list {
+  display: grid;
+  gap: 0.32rem;
+  margin-top: 0.45rem;
+  color: hsl(var(--muted));
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.career-package-card .course-detail-list li {
+  padding-left: 0.1rem;
 }
 
 .career-package-card:hover,
@@ -1159,10 +1191,47 @@ p { margin: 0; }
   box-shadow: 0 20px 36px hsl(var(--primary) / 0.16);
 }
 
+.career-package-selected {
+  position: absolute;
+  top: 0.9rem;
+  right: 0.9rem;
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 999px;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12px 24px hsl(var(--primary) / 0.25);
+}
+
+.career-package-admin-actions {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 2;
+  display: inline-flex;
+  gap: 0.4rem;
+  opacity: 0.72;
+  transition: opacity 0.2s ease;
+}
+
+.career-package-card:hover .career-package-admin-actions {
+  opacity: 1;
+}
+
+.career-package-card .career-package-admin-actions + .career-package-selected {
+  top: 3rem;
+}
+
 .course-detail-actions-modal {
-  margin-top: 0;
+  position: sticky;
+  bottom: 0;
+  margin: 1rem -0.15rem -0.15rem;
   justify-content: flex-end;
-  padding-top: 0.15rem;
+  padding: 0.9rem 0 0.15rem;
+  background: linear-gradient(180deg, transparent, hsl(var(--card)) 32%);
 }
 
 .dark .whatsapp-link {
@@ -1501,6 +1570,8 @@ select.field option {
 .blog-card h3 { margin-top: 0.75rem; }
 .blog-excerpt { flex: 1; }
 .blog-footer { margin-top: 1rem; font-size: 0.6875rem; color: hsl(var(--muted)); }
+.blog-card-top { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.blog-card:hover .admin-actions { opacity: 1; }
 .career-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem; }
 .career-card {
   display: flex; flex-direction: column; gap: 0.9rem; height: 100%; padding: 1.5rem;
@@ -1519,6 +1590,7 @@ select.field option {
   border-color: hsl(var(--primary) / 0.24);
   box-shadow: 0 18px 40px hsl(225 30% 24% / 0.08);
 }
+.career-card:hover .admin-actions { opacity: 1; }
 .career-card-button:focus-visible {
   outline: 3px solid hsl(var(--primary) / 0.18);
   outline-offset: 3px;
@@ -2033,6 +2105,10 @@ select.field option {
   .company-track {
     animation-duration: 200s;
   }
+
+  .career-package-card {
+    flex-basis: clamp(15rem, 38vw, 17.5rem);
+  }
 }
 
 @media (max-width: 767px) {
@@ -2083,9 +2159,12 @@ select.field option {
   }
 
   .career-package-row {
-    grid-auto-columns: minmax(16rem, 85%);
-    min-height: 23rem;
-    max-height: 23rem;
+    padding-right: 1rem;
+  }
+
+  .career-package-card {
+    flex-basis: min(76vw, 17.5rem);
+    min-height: auto;
   }
 
   .course-card-actions {
@@ -2357,5 +2436,3 @@ select.field option {
 .flex-1 {
   flex: 1;
 }
-
-

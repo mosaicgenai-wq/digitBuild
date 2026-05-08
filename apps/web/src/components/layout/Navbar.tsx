@@ -36,18 +36,19 @@ export function Navbar() {
     setIsOpen(false);
   }, [location.pathname, location.hash]);
 
-  function handleLogout() {
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('userRole');
-    window.location.href = '/';
-  }
-
   function toggleTheme() {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
     document.documentElement.classList.remove('light', 'dark');
     document.documentElement.classList.add(nextTheme);
     localStorage.setItem('theme', nextTheme);
     setTheme(nextTheme);
+  }
+
+  function handleLogout() {
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('username');
+    window.location.href = '/';
   }
 
   function isLinkActive(to: string) {
@@ -90,11 +91,7 @@ export function Navbar() {
                 <button onClick={handleLogout} className="btn-minimalist">
                   Logout
                 </button>
-              ) : (
-                <ButtonLink to="/login" variant="ghost" className="btn-minimalist">
-                  Login
-                </ButtonLink>
-              )}
+              ) : null}
               <ButtonLink to="/contact" size="sm">
                 Get Started
               </ButtonLink>
@@ -124,11 +121,7 @@ export function Navbar() {
               <button onClick={handleLogout} className="mobile-menu-link text-left" style={{ background: 'transparent', border: 'none', padding: '1rem 1.5rem' }}>
                 Logout
               </button>
-            ) : (
-              <ButtonLink to="/login" variant="ghost" size="lg">
-                Login
-              </ButtonLink>
-            )}
+            ) : null}
             <ButtonLink to="/contact" size="lg">
               Get Started
             </ButtonLink>

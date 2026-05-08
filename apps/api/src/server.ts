@@ -112,7 +112,26 @@ const verifyPaymentSchema = z.object({
   razorpay_signature: z.string().trim().min(1),
 });
 
-function getCareerPackageBySlug(slug: string) {
+async function getCareerPackageBySlug(slug: string) {
+  const sanityPackage = await sanityClient.fetch(
+    `*[_type == "placementPackage" && slug == $slug][0]{
+      slug,
+      name,
+      amount,
+      currency
+    }`,
+    { slug }
+  );
+
+  if (sanityPackage) {
+    return {
+      slug: String(sanityPackage.slug),
+      name: String(sanityPackage.name),
+      amount: Number(sanityPackage.amount),
+      currency: sanityPackage.currency === 'INR' ? 'INR' : 'INR',
+    };
+  }
+
   return careerPackages.find((pkg) => pkg.slug === slug) ?? null;
 }
 
@@ -180,10 +199,13 @@ app.post('/api/login', async (request, response) => {
     );
 
     if (user) {
+      const role = user.role || (user.username === 'admin' ? 'admin' : 'user');
+
       return response.status(200).json({
         success: true,
         message: 'Login successful.',
         username: user.username,
+        role,
       });
     }
 
@@ -300,13 +322,13 @@ app.post('/api/payments/create-order', async (request, response) => {
     });
   }
 
-  const selectedPackage = getCareerPackageBySlug(parsed.data.packageSlug);
-
-  if (!selectedPackage) {
-    return response.status(400).json({ message: 'Invalid package selected.' });
-  }
-
   try {
+    const selectedPackage = await getCareerPackageBySlug(parsed.data.packageSlug);
+
+    if (!selectedPackage) {
+      return response.status(400).json({ message: 'Invalid package selected.' });
+    }
+
     const keyId = getRequiredEnv('RAZORPAY_KEY_ID');
     const keySecret = getRequiredEnv('RAZORPAY_KEY_SECRET');
     const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
@@ -360,7 +382,7 @@ app.post('/api/payments/create-order', async (request, response) => {
   }
 });
 
-app.post('/api/payments/verify', (request, response) => {
+app.post('/api/payments/verify', async (request, response) => {
   const parsed = verifyPaymentSchema.safeParse(request.body);
 
   if (!parsed.success) {
@@ -370,13 +392,13 @@ app.post('/api/payments/verify', (request, response) => {
     });
   }
 
-  const selectedPackage = getCareerPackageBySlug(parsed.data.packageSlug);
-
-  if (!selectedPackage) {
-    return response.status(400).json({ message: 'Invalid package selected.' });
-  }
-
   try {
+    const selectedPackage = await getCareerPackageBySlug(parsed.data.packageSlug);
+
+    if (!selectedPackage) {
+      return response.status(400).json({ message: 'Invalid package selected.' });
+    }
+
     const generatedSignature = crypto
       .createHmac('sha256', getRequiredEnv('RAZORPAY_KEY_SECRET'))
       .update(`${parsed.data.razorpay_order_id}|${parsed.data.razorpay_payment_id}`)

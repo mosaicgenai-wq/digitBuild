@@ -1,10 +1,30 @@
-import { ArrowRight, BriefcaseBusiness, Clock3, MapPin, Send, Users, X } from 'lucide-react';
+import { ArrowRight, BriefcaseBusiness, Clock3, Edit2, MapPin, Plus, Send, Trash2, Users, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { ButtonLink } from '../components/ui/Button';
 import { Reveal } from '../components/ui/Reveal';
 import { SectionEyebrow, SectionTitle } from '../components/ui/SectionIntro';
+import { sanityClient } from '../lib/sanity';
+import { useSanityData } from '../lib/useSanityData';
+import { useToast } from '../components/toast/ToastProvider';
 
-const openings = [
+interface CareerOpening {
+  _id?: string;
+  _createdAt?: string;
+  id?: string;
+  title: string;
+  type: string;
+  location: string;
+  mode: string;
+  team: string;
+  summary: string;
+  overview: string;
+  responsibilities: string[];
+  requirements: string[];
+  perks: string[];
+  applyNote: string;
+}
+
+const openings: CareerOpening[] = [
   {
     title: 'Frontend Developer Intern',
     type: 'Internship',
@@ -75,9 +95,81 @@ const openings = [
 
 const process = ['Apply with resume', 'Shortlisting', 'Discussion round', 'Task or assessment', 'Final decision'];
 
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
+function serializeList(items: string[] = []) {
+  return items.join('\n');
+}
+
+function parseList(value: string) {
+  return value.split('\n').map((item) => item.trim()).filter(Boolean);
+}
+
 export default function CareerPage() {
-  const [selectedOpening, setSelectedOpening] = useState<(typeof openings)[number] | null>(null);
+  const { showToast } = useToast();
+  const { data: sanityOpenings, loading, error } = useSanityData<CareerOpening[]>(`*[_type == "careerOpening"] | order(_createdAt desc)`);
+  const [careerOpenings, setCareerOpenings] = useState<CareerOpening[]>(openings);
+  const [selectedOpening, setSelectedOpening] = useState<CareerOpening | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isManaging, setIsManaging] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasSeededOpenings, setHasSeededOpenings] = useState(false);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState<string | null>(null);
+  const [manageData, setManageData] = useState<any>({
+    title: '',
+    type: 'Full-time',
+    location: '',
+    mode: 'Full-time',
+    team: '',
+    summary: '',
+    overview: '',
+    responsibilities: '',
+    requirements: '',
+    perks: '',
+    applyNote: '',
+  });
   const dialogRef = useRef<HTMLDialogElement | null>(null);
+  const manageDialogRef = useRef<HTMLDialogElement | null>(null);
+  const confirmDialogRef = useRef<HTMLDialogElement | null>(null);
+
+  useEffect(() => {
+    setIsAdmin(localStorage.getItem('isAuthenticated') === 'true' && localStorage.getItem('userRole') === 'admin');
+  }, []);
+
+  useEffect(() => {
+    if (sanityOpenings && sanityOpenings.length > 0) {
+      setCareerOpenings(sanityOpenings.map((opening) => ({ ...opening, id: opening.id || opening._id })));
+    }
+  }, [sanityOpenings]);
+
+  useEffect(() => {
+    const seedDefaultOpenings = async () => {
+      if (!isAdmin || hasSeededOpenings || loading || !sanityOpenings || sanityOpenings.length > 0) return;
+      setHasSeededOpenings(true);
+
+      try {
+        await Promise.all(
+          openings.map((opening) =>
+            sanityClient.createIfNotExists({
+              ...opening,
+              _id: `careerOpening-${slugify(opening.title)}`,
+              _type: 'careerOpening',
+            }),
+          ),
+        );
+        await fetchCareerOpenings();
+      } catch (err) {
+        console.error('Career seed error:', err);
+      }
+    };
+
+    void seedDefaultOpenings();
+  }, [hasSeededOpenings, isAdmin, loading, sanityOpenings]);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -95,12 +187,120 @@ export default function CareerPage() {
     }
   }, [selectedOpening]);
 
-  function openOpeningDetails(opening: (typeof openings)[number]) {
+  useEffect(() => {
+    const dialog = manageDialogRef.current;
+    if (!dialog) return;
+    if (isManaging) {
+      if (!dialog.open) dialog.showModal();
+    } else if (dialog.open) {
+      dialog.close();
+    }
+  }, [isManaging]);
+
+  useEffect(() => {
+    const dialog = confirmDialogRef.current;
+    if (!dialog) return;
+    if (isConfirmingDelete) {
+      if (!dialog.open) dialog.showModal();
+    } else if (dialog.open) {
+      dialog.close();
+    }
+  }, [isConfirmingDelete]);
+
+  async function fetchCareerOpenings() {
+    try {
+      const data = await sanityClient.fetch<CareerOpening[]>(`*[_type == "careerOpening"] | order(_createdAt desc)`);
+      setCareerOpenings(data.map((opening) => ({ ...opening, id: opening.id || opening._id })));
+    } catch (err) {
+      console.error('Failed to fetch career openings');
+    }
+  }
+
+  function openOpeningDetails(opening: CareerOpening) {
     setSelectedOpening(opening);
   }
 
   function closeOpeningDetails() {
     setSelectedOpening(null);
+  }
+
+  function openManage(opening?: CareerOpening) {
+    if (opening) {
+      setManageData({
+        ...opening,
+        responsibilities: serializeList(opening.responsibilities),
+        requirements: serializeList(opening.requirements),
+        perks: serializeList(opening.perks),
+      });
+    } else {
+      setManageData({
+        title: '',
+        type: 'Full-time',
+        location: '',
+        mode: 'Full-time',
+        team: '',
+        summary: '',
+        overview: '',
+        responsibilities: '',
+        requirements: '',
+        perks: '',
+        applyNote: '',
+      });
+    }
+    setIsManaging(true);
+  }
+
+  async function handleSaveOpening(event: React.FormEvent) {
+    event.preventDefault();
+    setIsSaving(true);
+
+    const payload = {
+      _type: 'careerOpening',
+      title: manageData.title,
+      type: manageData.type,
+      location: manageData.location,
+      mode: manageData.mode,
+      team: manageData.team,
+      summary: manageData.summary,
+      overview: manageData.overview,
+      responsibilities: parseList(manageData.responsibilities),
+      requirements: parseList(manageData.requirements),
+      perks: parseList(manageData.perks),
+      applyNote: manageData.applyNote,
+    };
+
+    try {
+      if (manageData._id) {
+        await sanityClient.patch(manageData._id).set(payload).commit();
+      } else {
+        await sanityClient.create(payload);
+      }
+      setIsManaging(false);
+      await fetchCareerOpenings();
+      showToast('Opening Saved', `${payload.title} has been updated successfully.`, 'success');
+    } catch (err) {
+      console.error('Career save error:', err);
+      showToast('Save Failed', 'Could not save the career opening. Check your Sanity token permissions.', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function confirmDelete() {
+    if (!isConfirmingDelete) return;
+    setIsSaving(true);
+    try {
+      await sanityClient.delete(isConfirmingDelete);
+      setIsConfirmingDelete(null);
+      if (selectedOpening?._id === isConfirmingDelete) setSelectedOpening(null);
+      await fetchCareerOpenings();
+      showToast('Opening Deleted', 'The career opening has been removed.', 'success');
+    } catch (err) {
+      console.error('Career delete error:', err);
+      showToast('Delete Failed', 'You do not have permission to delete this career opening.', 'error');
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
@@ -125,9 +325,26 @@ export default function CareerPage() {
             <SectionEyebrow>Open Roles</SectionEyebrow>
             <SectionTitle className="mb-12">Current and upcoming openings</SectionTitle>
           </Reveal>
+          {isAdmin && (
+            <div className="flex-between mb-12">
+              <span className="time-chip">Admin mode</span>
+              <button onClick={() => openManage()} className="btn btn-sm btn-minimalist" style={{ border: '1px solid hsl(var(--border))', borderRadius: '0.75rem', padding: '0.5rem 1rem' }}>
+                <Plus size={16} /> New Opening
+              </button>
+            </div>
+          )}
 
           <div className="career-grid">
-            {openings.map((opening, index) => (
+            {loading ? (
+              <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem' }}>
+                <p>Loading openings...</p>
+              </div>
+            ) : error && careerOpenings.length === 0 ? (
+              <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem', color: 'hsl(var(--destructive))' }}>
+                <p>Error: {error}</p>
+                <p style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>Showing local career content when Sanity is unavailable.</p>
+              </div>
+            ) : careerOpenings.map((opening, index) => (
               <Reveal key={opening.title} delay={index * 0.06}>
                 <div
                   className="career-card career-card-button"
@@ -143,7 +360,14 @@ export default function CareerPage() {
                 >
                   <div className="career-card-top">
                     <span className="duration-chip">{opening.type}</span>
-                    <BriefcaseBusiness className="info-icon career-icon" strokeWidth={1.8} />
+                    {isAdmin && opening._id ? (
+                      <div className="admin-actions">
+                        <button type="button" onClick={(event) => { event.stopPropagation(); openManage(opening); }} className="icon-btn-small" title="Edit"><Edit2 size={14} /></button>
+                        <button type="button" onClick={(event) => { event.stopPropagation(); setIsConfirmingDelete(opening._id || null); }} className="icon-btn-small text-danger" title="Delete"><Trash2 size={14} /></button>
+                      </div>
+                    ) : (
+                      <BriefcaseBusiness className="info-icon career-icon" strokeWidth={1.8} />
+                    )}
                   </div>
                   <h3>{opening.title}</h3>
                   <p className="career-summary">{opening.summary}</p>
@@ -283,6 +507,100 @@ export default function CareerPage() {
             </div>
           </div>
         ) : null}
+      </dialog>
+
+      <dialog ref={manageDialogRef} className="course-modal" onClose={() => setIsManaging(false)}>
+        <div className="admin-modal-panel">
+          <div className="admin-header">
+            <h2>{manageData._id ? 'Refine Opening' : 'Create New Opening'}</h2>
+            <button type="button" className="course-modal-close" onClick={() => setIsManaging(false)}><X /></button>
+          </div>
+
+          <form onSubmit={handleSaveOpening}>
+            <div className="admin-form-body">
+              <div className="form-section">
+                <span className="form-section-title">Role Information</span>
+                <div className="admin-form-grid">
+                  <div className="admin-field">
+                    <label>Role Title</label>
+                    <input className="admin-input" type="text" value={manageData.title} onChange={event => setManageData({...manageData, title: event.target.value})} required placeholder="e.g. Frontend Developer Intern" />
+                  </div>
+                  <div className="admin-field">
+                    <label>Role Type</label>
+                    <input className="admin-input" type="text" value={manageData.type} onChange={event => setManageData({...manageData, type: event.target.value})} required placeholder="e.g. Internship" />
+                  </div>
+                  <div className="admin-field">
+                    <label>Location</label>
+                    <input className="admin-input" type="text" value={manageData.location} onChange={event => setManageData({...manageData, location: event.target.value})} required placeholder="e.g. Pune / Hybrid" />
+                  </div>
+                  <div className="admin-field">
+                    <label>Mode</label>
+                    <input className="admin-input" type="text" value={manageData.mode} onChange={event => setManageData({...manageData, mode: event.target.value})} required placeholder="e.g. Full-time" />
+                  </div>
+                  <div className="admin-field">
+                    <label>Team</label>
+                    <input className="admin-input" type="text" value={manageData.team} onChange={event => setManageData({...manageData, team: event.target.value})} required placeholder="e.g. Engineering" />
+                  </div>
+                  <div className="admin-field">
+                    <label>Card Summary</label>
+                    <input className="admin-input" type="text" value={manageData.summary} onChange={event => setManageData({...manageData, summary: event.target.value})} required placeholder="Short role summary" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="form-section">
+                <span className="form-section-title">Job Description</span>
+                <div className="admin-field">
+                  <label>Overview</label>
+                  <textarea className="admin-textarea" value={manageData.overview} onChange={event => setManageData({...manageData, overview: event.target.value})} required placeholder="Describe the role..." />
+                </div>
+                <div className="admin-form-grid" style={{ marginTop: '1rem' }}>
+                  <div className="admin-field">
+                    <label>Responsibilities (One per line)</label>
+                    <textarea className="admin-textarea" value={manageData.responsibilities} onChange={event => setManageData({...manageData, responsibilities: event.target.value})} required placeholder="Responsibility 1&#10;Responsibility 2" />
+                  </div>
+                  <div className="admin-field">
+                    <label>Requirements (One per line)</label>
+                    <textarea className="admin-textarea" value={manageData.requirements} onChange={event => setManageData({...manageData, requirements: event.target.value})} required placeholder="Requirement 1&#10;Requirement 2" />
+                  </div>
+                  <div className="admin-field">
+                    <label>Perks (One per line)</label>
+                    <textarea className="admin-textarea" value={manageData.perks} onChange={event => setManageData({...manageData, perks: event.target.value})} placeholder="Perk 1&#10;Perk 2" />
+                  </div>
+                  <div className="admin-field">
+                    <label>Apply Note</label>
+                    <textarea className="admin-textarea" value={manageData.applyNote} onChange={event => setManageData({...manageData, applyNote: event.target.value})} required placeholder="Best fit note for candidates..." />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="admin-footer">
+              <button type="button" className="btn-admin-cancel" onClick={() => setIsManaging(false)} disabled={isSaving}>Cancel</button>
+              <button type="submit" className="btn-admin-save" disabled={isSaving}>
+                {isSaving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </dialog>
+
+      <dialog ref={confirmDialogRef} className="course-modal" onClose={() => setIsConfirmingDelete(null)}>
+        <div className="confirm-modal-panel glass">
+          <div className="confirm-icon-wrap">
+            <Trash2 size={32} />
+          </div>
+          <h2 className="confirm-title">Are you sure?</h2>
+          <p className="confirm-text">
+            This action will permanently delete the career opening. This cannot be undone.
+          </p>
+          <div className="confirm-actions">
+            <button className="btn btn-ghost flex-1" onClick={() => setIsConfirmingDelete(null)} disabled={isSaving}>No, Cancel</button>
+            <button className="btn btn-danger flex-1" onClick={confirmDelete} disabled={isSaving}>
+              {isSaving ? 'Deleting...' : 'Yes, Delete'}
+            </button>
+          </div>
+        </div>
       </dialog>
     </main>
   );

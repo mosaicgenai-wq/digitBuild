@@ -1,12 +1,13 @@
 import { ArrowLeft, ArrowRight, CreditCard, ShieldCheck } from 'lucide-react';
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Navigate, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { useToast } from '../components/toast/ToastProvider';
 import { Reveal } from '../components/ui/Reveal';
 import { SectionEyebrow, SectionTitle } from '../components/ui/SectionIntro';
-import { getCareerPackageBySlug } from '../lib/payment';
+import { getCareerPackageBySlug, type CareerPackage } from '../lib/payment';
 import { API_BASE } from '../config/api';
+import { useSanityData } from '../lib/useSanityData';
 
 type PaymentForm = {
   name: string;
@@ -23,6 +24,28 @@ const initialValues: PaymentForm = {
   jobRole: '',
   experience: '',
 };
+
+function getExperienceOptions(experienceLabel = '') {
+  const rangeMatch = experienceLabel.match(/(\d+)\s*to\s*(\d+)/i);
+  if (rangeMatch) {
+    const start = Number(rangeMatch[1]);
+    const end = Number(rangeMatch[2]);
+    if (Number.isFinite(start) && Number.isFinite(end) && start <= end) {
+      return Array.from({ length: end - start + 1 }, (_, index) => String(start + index));
+    }
+  }
+
+  const plusMatch = experienceLabel.match(/(\d+)\s*\+/);
+  if (plusMatch) {
+    return [`${plusMatch[1]}+`];
+  }
+
+  if (/all experience/i.test(experienceLabel)) {
+    return ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10+'];
+  }
+
+  return [];
+}
 
 declare global {
   interface Window {
@@ -93,7 +116,13 @@ export default function PlacementPaymentPage() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [searchParams] = useSearchParams();
-  const selectedPackage = useMemo(() => getCareerPackageBySlug(searchParams.get('package')), [searchParams]);
+  const packageSlug = searchParams.get('package');
+  const { data: sanityPackages, loading: packagesLoading } = useSanityData<CareerPackage[]>(`*[_type == "placementPackage"] | order(amount asc)`);
+  const selectedPackage = useMemo(() => {
+    const dynamicPackage = sanityPackages?.find((pkg) => pkg.slug === packageSlug);
+    return dynamicPackage || getCareerPackageBySlug(packageSlug);
+  }, [packageSlug, sanityPackages]);
+  const experienceOptions = useMemo(() => getExperienceOptions(selectedPackage?.experience), [selectedPackage]);
   const [form, setForm] = useState(initialValues);
   const [errors, setErrors] = useState<Partial<Record<keyof PaymentForm, string>>>({});
   const [loading, setLoading] = useState(false);
@@ -104,6 +133,17 @@ export default function PlacementPaymentPage() {
     form.phone.trim() &&
     form.jobRole.trim() &&
     form.experience.trim();
+
+  useEffect(() => {
+    setForm((current) => {
+      if (!current.experience || experienceOptions.includes(current.experience)) return current;
+      return { ...current, experience: '' };
+    });
+  }, [experienceOptions]);
+
+  if (!selectedPackage && packagesLoading) {
+    return <main className="pt-nav"><div className="page-skeleton" /></main>;
+  }
 
   if (!selectedPackage) {
     return <Navigate to="/" replace />;
@@ -294,7 +334,14 @@ export default function PlacementPaymentPage() {
                   <label className="form-field-label" htmlFor="payment-experience">
                     Experience <span className="required-mark">*</span>
                   </label>
-                  <input id="payment-experience" className="field" type="text" placeholder="Experience" value={form.experience} onChange={(event) => setForm((current) => ({ ...current, experience: event.target.value }))} />
+                  <select id="payment-experience" className="field" value={form.experience} onChange={(event) => setForm((current) => ({ ...current, experience: event.target.value }))}>
+                    <option value="">Select {selectedPackage.experience}</option>
+                    {experienceOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
                   {errors.experience ? <p className="field-error">{errors.experience}</p> : null}
                 </div>
 

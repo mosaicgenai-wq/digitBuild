@@ -1,9 +1,11 @@
 import {
   BookOpen,
   Briefcase,
+  Check,
   ChevronLeft,
   ChevronRight,
   CreditCard,
+  Edit2,
   FileCheck,
   FileText,
   Globe,
@@ -15,6 +17,7 @@ import {
   Shield,
   Sparkles,
   Target,
+  Trash2,
   Users,
   X,
 } from 'lucide-react';
@@ -24,7 +27,10 @@ import { ButtonLink } from '../components/ui/Button';
 import { Counter } from '../components/ui/Counter';
 import { Reveal } from '../components/ui/Reveal';
 import { SectionEyebrow, SectionTitle } from '../components/ui/SectionIntro';
-import { careerPackages } from '../lib/payment';
+import { careerPackages, type CareerPackage } from '../lib/payment';
+import { sanityClient } from '../lib/sanity';
+import { useSanityData } from '../lib/useSanityData';
+import { useToast } from '../components/toast/ToastProvider';
 
 const stats = [
   { value: 5000, suffix: '+', label: 'Resumes Written' },
@@ -500,15 +506,87 @@ const placedCompanies = [
 const placedCompaniesMarquee = [...placedCompanies, ...placedCompanies];
 const whatsappNumber = '+917385490573';
 
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
+function parsePriceToAmount(price: string) {
+  const value = Number(price.replace(/[^\d]/g, ''));
+  return Number.isFinite(value) ? value * 100 : 0;
+}
+
+function serializeList(items: string[] = []) {
+  return items.join('\n');
+}
+
+function parseList(value: string) {
+  return value.split('\n').map((item) => item.trim()).filter(Boolean);
+}
+
 export default function HomePage() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
+  const { data: sanityCareerPackages, loading: packagesLoading } = useSanityData<CareerPackage[]>(`*[_type == "placementPackage"] | order(amount asc)`);
   const [activeIndex, setActiveIndex] = useState(0);
   const [testimonialDirection, setTestimonialDirection] = useState<-1 | 0 | 1>(0);
   const [isTestimonialAnimating, setIsTestimonialAnimating] = useState(false);
   const [isTestimonialResetting, setIsTestimonialResetting] = useState(false);
   const [selectedCareerOffering, setSelectedCareerOffering] = useState<(typeof careerOfferings)[number] | null>(null);
-  const [selectedCareerPackage, setSelectedCareerPackage] = useState<(typeof careerPackages)[number] | null>(null);
+  const [dynamicCareerPackages, setDynamicCareerPackages] = useState<CareerPackage[]>(careerPackages);
+  const [selectedCareerPackage, setSelectedCareerPackage] = useState<CareerPackage | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [hasSeededPackages, setHasSeededPackages] = useState(false);
+  const [isManagingPackage, setIsManagingPackage] = useState(false);
+  const [isSavingPackage, setIsSavingPackage] = useState(false);
+  const [isConfirmingPackageDelete, setIsConfirmingPackageDelete] = useState<string | null>(null);
+  const [packageForm, setPackageForm] = useState<any>({
+    name: '',
+    slug: '',
+    experience: '',
+    price: '',
+    amount: '',
+    features: '',
+  });
   const careerPackageDialogRef = useRef<HTMLDialogElement | null>(null);
+  const packageManageDialogRef = useRef<HTMLDialogElement | null>(null);
+  const packageConfirmDialogRef = useRef<HTMLDialogElement | null>(null);
+
+  useEffect(() => {
+    setIsAdmin(localStorage.getItem('isAuthenticated') === 'true' && localStorage.getItem('userRole') === 'admin');
+  }, []);
+
+  useEffect(() => {
+    if (sanityCareerPackages && sanityCareerPackages.length > 0) {
+      setDynamicCareerPackages(sanityCareerPackages);
+    }
+  }, [sanityCareerPackages]);
+
+  useEffect(() => {
+    const seedDefaultPackages = async () => {
+      if (!isAdmin || hasSeededPackages || packagesLoading || !sanityCareerPackages || sanityCareerPackages.length > 0) return;
+      setHasSeededPackages(true);
+
+      try {
+        await Promise.all(
+          careerPackages.map((pkg) =>
+            sanityClient.createIfNotExists({
+              ...pkg,
+              _id: `placementPackage-${pkg.slug}`,
+              _type: 'placementPackage',
+            }),
+          ),
+        );
+        await fetchCareerPackages();
+      } catch (error) {
+        console.error('Placement package seed error:', error);
+      }
+    };
+
+    void seedDefaultPackages();
+  }, [hasSeededPackages, isAdmin, packagesLoading, sanityCareerPackages]);
 
   useEffect(() => {
     const dialog = careerPackageDialogRef.current;
@@ -525,6 +603,26 @@ export default function HomePage() {
       dialog.close();
     }
   }, [selectedCareerOffering]);
+
+  useEffect(() => {
+    const dialog = packageManageDialogRef.current;
+    if (!dialog) return;
+    if (isManagingPackage) {
+      if (!dialog.open) dialog.showModal();
+    } else if (dialog.open) {
+      dialog.close();
+    }
+  }, [isManagingPackage]);
+
+  useEffect(() => {
+    const dialog = packageConfirmDialogRef.current;
+    if (!dialog) return;
+    if (isConfirmingPackageDelete) {
+      if (!dialog.open) dialog.showModal();
+    } else if (dialog.open) {
+      dialog.close();
+    }
+  }, [isConfirmingPackageDelete]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -618,6 +716,86 @@ export default function HomePage() {
 
     closeCareerPackageModal();
     navigate(`/placement-payment?package=${encodeURIComponent(selectedCareerPackage.slug)}`);
+  }
+
+  async function fetchCareerPackages() {
+    try {
+      const data = await sanityClient.fetch<CareerPackage[]>(`*[_type == "placementPackage"] | order(amount asc)`);
+      setDynamicCareerPackages(data.length > 0 ? data : careerPackages);
+    } catch (error) {
+      console.error('Failed to fetch placement packages');
+    }
+  }
+
+  function openPackageManage(pkg?: CareerPackage) {
+    if (pkg) {
+      setPackageForm({
+        ...pkg,
+        amount: String(pkg.amount / 100),
+        features: serializeList(pkg.features),
+      });
+    } else {
+      setPackageForm({
+        name: '',
+        slug: '',
+        experience: '',
+        price: '',
+        amount: '',
+        features: '',
+      });
+    }
+    setIsManagingPackage(true);
+  }
+
+  async function handleSavePackage(event: React.FormEvent) {
+    event.preventDefault();
+    setIsSavingPackage(true);
+
+    const amountInRupees = Number(packageForm.amount) || Number(packageForm.price.replace(/[^\d]/g, ''));
+    const payload = {
+      _type: 'placementPackage',
+      slug: packageForm.slug || slugify(packageForm.name),
+      name: packageForm.name,
+      experience: packageForm.experience,
+      price: packageForm.price,
+      amount: amountInRupees > 0 ? amountInRupees * 100 : parsePriceToAmount(packageForm.price),
+      currency: 'INR' as const,
+      features: parseList(packageForm.features),
+    };
+
+    try {
+      if (packageForm._id) {
+        await sanityClient.patch(packageForm._id).set(payload).commit();
+      } else {
+        await sanityClient.create(payload);
+      }
+      setIsManagingPackage(false);
+      await fetchCareerPackages();
+      showToast('Package Saved', `${payload.name} has been updated successfully.`, 'success');
+    } catch (error) {
+      console.error('Placement package save error:', error);
+      showToast('Save Failed', 'Could not save the placement package. Check your Sanity token permissions.', 'error');
+    } finally {
+      setIsSavingPackage(false);
+    }
+  }
+
+  async function confirmPackageDelete() {
+    if (!isConfirmingPackageDelete) return;
+    setIsSavingPackage(true);
+
+    try {
+      await sanityClient.delete(isConfirmingPackageDelete);
+      setIsConfirmingPackageDelete(null);
+      if (selectedCareerPackage?._id === isConfirmingPackageDelete) setSelectedCareerPackage(null);
+      await fetchCareerPackages();
+      showToast('Package Deleted', 'The placement support package has been removed.', 'success');
+    } catch (error) {
+      console.error('Placement package delete error:', error);
+      showToast('Delete Failed', 'You do not have permission to delete this package.', 'error');
+    } finally {
+      setIsSavingPackage(false);
+    }
   }
 
   return (
@@ -767,7 +945,7 @@ export default function HomePage() {
                     </button>
                     <a href={getCareerSupportWhatsappLink(item.title)} target="_blank" rel="noreferrer" className="whatsapp-link whatsapp-link-card">
                       <MessageSquare className="inline-link-icon" />
-                      Chat on WhatsApp
+                      Chat Now
                     </a>
                   </div>
                 </div>
@@ -805,14 +983,36 @@ export default function HomePage() {
             </div>
 
             <div className="career-package-row" aria-label="Placement support packages">
-              {careerPackages.map((pkg) => (
-                <button
+              {dynamicCareerPackages.map((pkg) => (
+                <div
                   key={pkg.name}
-                  type="button"
+                  role="button"
+                  tabIndex={0}
                   className={`course-detail-panel course-detail-panel-modal career-package-card${selectedCareerPackage?.slug === pkg.slug ? ' is-selected' : ''}`}
                   onClick={() => setSelectedCareerPackage(pkg)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      setSelectedCareerPackage(pkg);
+                    }
+                  }}
                   aria-pressed={selectedCareerPackage?.slug === pkg.slug}
                 >
+                  {isAdmin && pkg._id ? (
+                    <span className="career-package-admin-actions" onClick={(event) => event.stopPropagation()}>
+                      <button type="button" className="icon-btn-small" title="Edit package" onClick={() => openPackageManage(pkg)}>
+                        <Edit2 size={14} />
+                      </button>
+                      <button type="button" className="icon-btn-small text-danger" title="Delete package" onClick={() => setIsConfirmingPackageDelete(pkg._id || null)}>
+                        <Trash2 size={14} />
+                      </button>
+                    </span>
+                  ) : null}
+                  {selectedCareerPackage?.slug === pkg.slug ? (
+                    <span className="career-package-selected" aria-hidden="true">
+                      <Check size={14} />
+                    </span>
+                  ) : null}
                   <div className="course-detail-block">
                     <p className="course-detail-label">{pkg.experience}</p>
                     <h3>{pkg.name}</h3>
@@ -826,17 +1026,95 @@ export default function HomePage() {
                       ))}
                     </ul>
                   </div>
-                </button>
+                </div>
               ))}
             </div>
 
             <div className="course-detail-actions course-detail-actions-modal">
+              {isAdmin ? (
+                <button type="button" className="btn btn-pill-outline btn-sm" onClick={() => openPackageManage()}>
+                  <CreditCard className="btn-icon" />
+                  New Package
+                </button>
+              ) : null}
               <button type="button" className="btn btn-pill btn-sm" disabled={!selectedCareerPackage} aria-disabled={!selectedCareerPackage} onClick={handleProceedToPayment}>
                 Proceed to payment
               </button>
             </div>
           </div>
         ) : null}
+      </dialog>
+
+      <dialog ref={packageManageDialogRef} className="course-modal" onClose={() => setIsManagingPackage(false)}>
+        <div className="admin-modal-panel">
+          <div className="admin-header">
+            <h2>{packageForm._id ? 'Refine Package' : 'Create New Package'}</h2>
+            <button type="button" className="course-modal-close" onClick={() => setIsManagingPackage(false)}><X /></button>
+          </div>
+
+          <form onSubmit={handleSavePackage}>
+            <div className="admin-form-body">
+              <div className="form-section">
+                <span className="form-section-title">Package Information</span>
+                <div className="admin-form-grid">
+                  <div className="admin-field">
+                    <label>Package Name</label>
+                    <input className="admin-input" type="text" value={packageForm.name} onChange={event => setPackageForm({...packageForm, name: event.target.value, slug: packageForm.slug || slugify(event.target.value)})} required placeholder="e.g. Mid-Level Pro" />
+                  </div>
+                  <div className="admin-field">
+                    <label>Slug</label>
+                    <input className="admin-input" type="text" value={packageForm.slug} onChange={event => setPackageForm({...packageForm, slug: slugify(event.target.value)})} required placeholder="e.g. mid-level-pro" />
+                  </div>
+                  <div className="admin-field">
+                    <label>Experience Label</label>
+                    <input className="admin-input" type="text" value={packageForm.experience} onChange={event => setPackageForm({...packageForm, experience: event.target.value})} required placeholder="e.g. 2 to 5 year" />
+                  </div>
+                  <div className="admin-field">
+                    <label>Display Price</label>
+                    <input className="admin-input" type="text" value={packageForm.price} onChange={event => setPackageForm({...packageForm, price: event.target.value})} required placeholder="e.g. Rs 3499" />
+                  </div>
+                  <div className="admin-field">
+                    <label>Payment Amount (INR)</label>
+                    <input className="admin-input" type="number" min="1" value={packageForm.amount} onChange={event => setPackageForm({...packageForm, amount: event.target.value})} required placeholder="3499" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="form-section">
+                <span className="form-section-title">Includes</span>
+                <div className="admin-field">
+                  <label>Features (One per line)</label>
+                  <textarea className="admin-textarea admin-textarea-tall" value={packageForm.features} onChange={event => setPackageForm({...packageForm, features: event.target.value})} required placeholder="ATS-optimised resume&#10;LinkedIn Optimization&#10;Call Support" />
+                </div>
+              </div>
+            </div>
+
+            <div className="admin-footer">
+              <button type="button" className="btn-admin-cancel" onClick={() => setIsManagingPackage(false)} disabled={isSavingPackage}>Cancel</button>
+              <button type="submit" className="btn-admin-save" disabled={isSavingPackage}>
+                {isSavingPackage ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </dialog>
+
+      <dialog ref={packageConfirmDialogRef} className="course-modal" onClose={() => setIsConfirmingPackageDelete(null)}>
+        <div className="confirm-modal-panel glass">
+          <div className="confirm-icon-wrap">
+            <Trash2 size={32} />
+          </div>
+          <h2 className="confirm-title">Are you sure?</h2>
+          <p className="confirm-text">
+            This action will permanently delete the placement support package. This cannot be undone.
+          </p>
+          <div className="confirm-actions">
+            <button className="btn btn-ghost flex-1" onClick={() => setIsConfirmingPackageDelete(null)} disabled={isSavingPackage}>No, Cancel</button>
+            <button className="btn btn-danger flex-1" onClick={confirmPackageDelete} disabled={isSavingPackage}>
+              {isSavingPackage ? 'Deleting...' : 'Yes, Delete'}
+            </button>
+          </div>
+        </div>
       </dialog>
 
       <section className="stats-band">
