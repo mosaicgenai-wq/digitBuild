@@ -8,9 +8,27 @@ import { useToast } from '../components/toast/ToastProvider';
 
 const categories = ['All', 'Development', 'Testing', 'Analytics'];
 const whatsappNumber = '+917385490573';
+const durationNumbers = Array.from({ length: 12 }, (_, index) => String(index + 1));
+const durationUnits = ['Days', 'Months', 'Years'];
 
 const iconMap: Record<string, any> = {
   Terminal, Atom, Smartphone, TestTube, ChartColumn, Database
+};
+
+const getDurationParts = (duration = '') => {
+  const match = duration.trim().match(/^(\d{1,2})\s*(day|days|month|months|year|years)$/i);
+  const number = match && durationNumbers.includes(match[1]) ? match[1] : '1';
+  const unit = match?.[2]?.toLowerCase();
+
+  if (unit?.startsWith('day')) return { durationNumber: number, durationUnit: 'Days' };
+  if (unit?.startsWith('year')) return { durationNumber: number, durationUnit: 'Years' };
+
+  return { durationNumber: number, durationUnit: 'Months' };
+};
+
+const formatDuration = (number: string, unit: string) => {
+  const singularUnit = unit.replace(/s$/, '');
+  return `${number} ${number === '1' ? singularUnit : unit}`;
 };
 
 interface Course {
@@ -38,8 +56,9 @@ export default function CoursesPage() {
   const [isManaging, setIsManaging] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [manageData, setManageData] = useState<any>({
-    title: '', icon: 'Terminal', cat: 'Development', duration: '', highlights: '', timeline: '', curriculum: '', learn: '', outcomes: ''
+    title: '', icon: 'Terminal', cat: 'Development', duration: '', durationNumber: '6', durationUnit: 'Months', highlights: '', timeline: '', curriculum: '', learn: '', outcomes: ''
   });
+  const [isIconDropdownOpen, setIsIconDropdownOpen] = useState(false);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState<string | null>(null);
   
   const dialogRef = useRef<HTMLDialogElement | null>(null);
@@ -47,7 +66,7 @@ export default function CoursesPage() {
   const confirmDialogRef = useRef<HTMLDialogElement | null>(null);
 
   useEffect(() => {
-    setIsAdmin(localStorage.getItem('userRole') === 'admin');
+    setIsAdmin(localStorage.getItem('isAuthenticated') === 'true' && localStorage.getItem('userRole') === 'admin');
   }, []);
 
   useEffect(() => {
@@ -107,7 +126,7 @@ export default function CoursesPage() {
       title: manageData.title,
       icon: manageData.icon,
       cat: manageData.cat,
-      duration: manageData.duration,
+      duration: formatDuration(manageData.durationNumber, manageData.durationUnit),
       timeline: manageData.timeline,
       highlights: manageData.highlights.split('\n').map((s: string) => s.trim()).filter(Boolean),
       curriculum: manageData.curriculum.split('\n').map((s: string) => s.trim()).filter(Boolean),
@@ -152,6 +171,7 @@ export default function CoursesPage() {
     if (course) {
       setManageData({
         ...course,
+        ...getDurationParts(course.duration),
         highlights: course.highlights?.join('\n') || '',
         curriculum: course.curriculum?.join('\n') || '',
         learn: course.learn?.join('\n') || '',
@@ -159,12 +179,15 @@ export default function CoursesPage() {
       });
     } else {
       setManageData({ 
-        title: '', icon: 'Terminal', cat: 'Development', duration: '', 
+        title: '', icon: 'Terminal', cat: 'Development', duration: '', durationNumber: '6', durationUnit: 'Months',
         highlights: '', timeline: '', curriculum: '', learn: '', outcomes: '' 
       });
     }
+    setIsIconDropdownOpen(false);
     setIsManaging(true);
   };
+
+  const SelectedManageIcon = iconMap[manageData.icon] || Terminal;
 
   return (
     <main className="pt-nav">
@@ -320,13 +343,52 @@ export default function CoursesPage() {
                   </div>
                   <div className="admin-field">
                     <label>Duration</label>
-                    <input className="admin-input" type="text" value={manageData.duration} onChange={e => setManageData({...manageData, duration: e.target.value})} required placeholder="e.g. 6 Months" />
+                    <div className="duration-select-row">
+                      <select className="admin-select" value={manageData.durationNumber} onChange={e => setManageData({...manageData, durationNumber: e.target.value})} required aria-label="Duration number">
+                        {durationNumbers.map(number => <option key={number} value={number}>{number}</option>)}
+                      </select>
+                      <select className="admin-select" value={manageData.durationUnit} onChange={e => setManageData({...manageData, durationUnit: e.target.value})} required aria-label="Duration unit">
+                        {durationUnits.map(unit => <option key={unit} value={unit}>{unit}</option>)}
+                      </select>
+                    </div>
                   </div>
                   <div className="admin-field">
                     <label>Display Icon</label>
-                    <select className="admin-select" value={manageData.icon} onChange={e => setManageData({...manageData, icon: e.target.value})}>
-                      {Object.keys(iconMap).map(i => <option key={i} value={i}>{i}</option>)}
-                    </select>
+                    <div className="icon-select-wrap">
+                      <button
+                        type="button"
+                        className="icon-select-trigger"
+                        aria-haspopup="listbox"
+                        aria-expanded={isIconDropdownOpen}
+                        onClick={() => setIsIconDropdownOpen(open => !open)}
+                      >
+                        <span className="icon-select-option">
+                          <SelectedManageIcon size={18} strokeWidth={1.8} />
+                          {manageData.icon}
+                        </span>
+                        <span className="icon-select-chevron" aria-hidden="true">⌄</span>
+                      </button>
+                      {isIconDropdownOpen && (
+                        <div className="icon-select-menu" role="listbox">
+                          {Object.entries(iconMap).map(([iconName, Icon]) => (
+                            <button
+                              key={iconName}
+                              type="button"
+                              className={`icon-select-item ${manageData.icon === iconName ? 'is-selected' : ''}`}
+                              role="option"
+                              aria-selected={manageData.icon === iconName}
+                              onClick={() => {
+                                setManageData({...manageData, icon: iconName});
+                                setIsIconDropdownOpen(false);
+                              }}
+                            >
+                              <Icon size={18} strokeWidth={1.8} />
+                              {iconName}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
