@@ -2,6 +2,7 @@ import compression from 'compression';
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
@@ -59,6 +60,77 @@ const courseSchema = z.object({
   learn: z.array(z.string()),
   outcomes: z.array(z.string()),
 });
+
+const careerPackages = [
+  {
+    slug: 'fresher-launch',
+    name: 'Fresher Launch',
+    amount: 199900,
+    currency: 'INR',
+  },
+  {
+    slug: 'mid-level-pro',
+    name: 'Mid-Level Pro',
+    amount: 349900,
+    currency: 'INR',
+  },
+  {
+    slug: 'senior-expert',
+    name: 'Senior Expert',
+    amount: 499900,
+    currency: 'INR',
+  },
+  {
+    slug: 'executive-elite',
+    name: 'Executive Elite',
+    amount: 799900,
+    currency: 'INR',
+  },
+  {
+    slug: 'remote-job-placement',
+    name: 'Remote Job Placement',
+    amount: 999900,
+    currency: 'INR',
+  },
+] as const;
+
+const createOrderSchema = z.object({
+  packageSlug: z.string().trim().min(1),
+  customer: z.object({
+    name: z.string().trim().min(1).max(120),
+    email: z.string().trim().email().max(160),
+    phone: z.string().trim().min(1).max(30),
+    jobRole: z.string().trim().min(1).max(120),
+    experience: z.string().trim().min(1).max(80),
+  }),
+});
+
+const verifyPaymentSchema = z.object({
+  packageSlug: z.string().trim().min(1),
+  razorpay_order_id: z.string().trim().min(1),
+  razorpay_payment_id: z.string().trim().min(1),
+  razorpay_signature: z.string().trim().min(1),
+});
+
+function getCareerPackageBySlug(slug: string) {
+  return careerPackages.find((pkg) => pkg.slug === slug) ?? null;
+}
+
+function getRequiredEnv(name: string) {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing environment variable: ${name}`);
+  }
+
+  return value;
+}
+
+function signaturesMatch(actualSignature: string, expectedSignature: string) {
+  const actual = Buffer.from(actualSignature, 'hex');
+  const expected = Buffer.from(expectedSignature, 'hex');
+
+  return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
+}
 
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({
@@ -215,6 +287,121 @@ app.delete('/api/courses/:id', async (request, response) => {
     response.json({ message: 'Course deleted.' });
   } catch (error) {
     response.status(500).json({ message: 'Failed to delete course.' });
+  }
+});
+
+app.post('/api/payments/create-order', async (request, response) => {
+  const parsed = createOrderSchema.safeParse(request.body);
+
+  if (!parsed.success) {
+    return response.status(400).json({
+      message: 'Invalid payment details.',
+      errors: parsed.error.flatten(),
+    });
+  }
+
+  const selectedPackage = getCareerPackageBySlug(parsed.data.packageSlug);
+
+  if (!selectedPackage) {
+    return response.status(400).json({ message: 'Invalid package selected.' });
+  }
+
+  try {
+    const keyId = getRequiredEnv('RAZORPAY_KEY_ID');
+    const keySecret = getRequiredEnv('RAZORPAY_KEY_SECRET');
+    const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
+    const receipt = `digitbuild_${selectedPackage.slug}_${Date.now()}`;
+
+    const orderResponse = await fetch('https://api.razorpay.com/v1/orders', {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${auth}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        amount: selectedPackage.amount,
+        currency: selectedPackage.currency,
+        receipt,
+        notes: {
+          packageSlug: selectedPackage.slug,
+          packageName: selectedPackage.name,
+          customerName: parsed.data.customer.name,
+          customerEmail: parsed.data.customer.email,
+          customerPhone: parsed.data.customer.phone,
+          jobRole: parsed.data.customer.jobRole,
+          experience: parsed.data.customer.experience,
+        },
+      }),
+    });
+
+    if (!orderResponse.ok) {
+      console.error('Razorpay order creation failed:', await orderResponse.text());
+      return response.status(502).json({ message: 'Unable to create Razorpay order.' });
+    }
+
+    const order = await orderResponse.json() as { id?: string };
+
+    if (!order.id) {
+      return response.status(502).json({ message: 'Razorpay did not return an order ID.' });
+    }
+
+    return response.status(200).json({
+      keyId,
+      orderId: order.id,
+      amount: selectedPackage.amount,
+      currency: selectedPackage.currency,
+      packageName: selectedPackage.name,
+    });
+  } catch (error) {
+    console.error('Payment order error:', error);
+    return response.status(500).json({
+      message: error instanceof Error ? error.message : 'Unexpected error while creating order.',
+    });
+  }
+});
+
+app.post('/api/payments/verify', (request, response) => {
+  const parsed = verifyPaymentSchema.safeParse(request.body);
+
+  if (!parsed.success) {
+    return response.status(400).json({
+      message: 'Missing payment verification details.',
+      errors: parsed.error.flatten(),
+    });
+  }
+
+  const selectedPackage = getCareerPackageBySlug(parsed.data.packageSlug);
+
+  if (!selectedPackage) {
+    return response.status(400).json({ message: 'Invalid package selected.' });
+  }
+
+  try {
+    const generatedSignature = crypto
+      .createHmac('sha256', getRequiredEnv('RAZORPAY_KEY_SECRET'))
+      .update(`${parsed.data.razorpay_order_id}|${parsed.data.razorpay_payment_id}`)
+      .digest('hex');
+
+    if (!signaturesMatch(parsed.data.razorpay_signature, generatedSignature)) {
+      return response.status(400).json({
+        success: false,
+        message: 'Payment signature verification failed.',
+      });
+    }
+
+    return response.status(200).json({
+      success: true,
+      message: 'Payment verified successfully.',
+      packageName: selectedPackage.name,
+      amount: selectedPackage.amount,
+      paymentId: parsed.data.razorpay_payment_id,
+      orderId: parsed.data.razorpay_order_id,
+    });
+  } catch (error) {
+    console.error('Payment verification error:', error);
+    return response.status(500).json({
+      message: error instanceof Error ? error.message : 'Unexpected verification error.',
+    });
   }
 });
 
