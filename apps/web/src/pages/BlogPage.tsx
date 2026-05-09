@@ -5,6 +5,7 @@ import { SectionEyebrow, SectionTitle } from '../components/ui/SectionIntro';
 import { sanityClient } from '../lib/sanity';
 import { useSanityData } from '../lib/useSanityData';
 import { useToast } from '../components/toast/ToastProvider';
+import { API_BASE } from '../config/api';
 
 const colors = [
   { label: 'Career Tips', color: 'tag-primary' },
@@ -386,9 +387,19 @@ export default function BlogPage() {
 
     try {
       if (manageData._id) {
-        await sanityClient.patch(manageData._id).set(payload).commit();
+        const response = await fetch(`${API_BASE}/api/blog-posts/${manageData._id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) throw new Error('Failed to update blog post');
       } else {
-        await sanityClient.create(payload);
+        const response = await fetch(`${API_BASE}/api/blog-posts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) throw new Error('Failed to create blog post');
       }
       setIsManaging(false);
       await fetchBlogPosts();
@@ -405,7 +416,10 @@ export default function BlogPage() {
     if (!isConfirmingDelete) return;
     setIsSaving(true);
     try {
-      await sanityClient.delete(isConfirmingDelete);
+      const response = await fetch(`${API_BASE}/api/blog-posts/${isConfirmingDelete}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete blog post');
       setIsConfirmingDelete(null);
       await fetchBlogPosts();
       showToast('Blog Deleted', 'The blog post has been removed.', 'success');

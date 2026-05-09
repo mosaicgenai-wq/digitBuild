@@ -17,6 +17,10 @@ type PaymentForm = {
   experience: string;
 };
 
+function formatPriceFromAmount(amountInPaise: number) {
+  return `Rs ${Math.round(amountInPaise / 100)}`;
+}
+
 const initialValues: PaymentForm = {
   name: '',
   email: '',
@@ -280,7 +284,7 @@ export default function PlacementPaymentPage() {
 
                 <div className="payment-amount-card">
                   <span>Amount payable</span>
-                  <strong>{selectedPackage.price}</strong>
+                  <strong>{formatPriceFromAmount(selectedPackage.amount)}</strong>
                 </div>
 
                 <div className="course-detail-block">

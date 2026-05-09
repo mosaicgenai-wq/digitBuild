@@ -61,6 +61,44 @@ const courseSchema = z.object({
   outcomes: z.array(z.string()),
 });
 
+const blogSectionSchema = z.object({
+  heading: z.string().trim().min(1),
+  paragraphs: z.array(z.string().trim().min(1)).min(1),
+});
+
+const blogPostSchema = z.object({
+  title: z.string().trim().min(1),
+  cat: z.string().trim().min(1),
+  date: z.string().trim().min(1),
+  excerpt: z.string().trim().min(1),
+  intro: z.string().trim().min(1),
+  sections: z.array(blogSectionSchema).min(1),
+});
+
+const careerOpeningSchema = z.object({
+  title: z.string().trim().min(1),
+  type: z.string().trim().min(1),
+  location: z.string().trim().min(1),
+  mode: z.string().trim().min(1),
+  team: z.string().trim().min(1),
+  summary: z.string().trim().min(1),
+  overview: z.string().trim().min(1),
+  responsibilities: z.array(z.string().trim().min(1)).min(1),
+  requirements: z.array(z.string().trim().min(1)).min(1),
+  perks: z.array(z.string().trim().min(1)),
+  applyNote: z.string().trim().min(1),
+});
+
+const placementPackageSchema = z.object({
+  slug: z.string().trim().min(1),
+  name: z.string().trim().min(1),
+  experience: z.string().trim().min(1),
+  price: z.string().trim().min(1),
+  amount: z.number().int().positive(),
+  currency: z.literal('INR'),
+  features: z.array(z.string().trim().min(1)).min(1),
+});
+
 const careerPackages = [
   {
     slug: 'fresher-launch',
@@ -309,6 +347,83 @@ app.delete('/api/courses/:id', async (request, response) => {
     response.json({ message: 'Course deleted.' });
   } catch (error) {
     response.status(500).json({ message: 'Failed to delete course.' });
+  }
+});
+
+app.post('/api/blog-posts', async (request, response) => {
+  const parsed = blogPostSchema.safeParse(request.body);
+  if (!parsed.success) return response.status(400).json({ message: 'Invalid blog post data.' });
+
+  try {
+    const newPost = await sanityClient.create({
+      _type: 'blogPost',
+      ...parsed.data,
+    });
+    response.status(201).json(newPost);
+  } catch (error) {
+    response.status(500).json({ message: 'Failed to add blog post.' });
+  }
+});
+
+app.put('/api/blog-posts/:id', async (request, response) => {
+  const parsed = blogPostSchema.safeParse(request.body);
+  if (!parsed.success) return response.status(400).json({ message: 'Invalid blog post data.' });
+
+  try {
+    const updated = await sanityClient.patch(request.params.id).set(parsed.data).commit();
+    response.json(updated);
+  } catch (error) {
+    response.status(500).json({ message: 'Failed to update blog post.' });
+  }
+});
+
+app.delete('/api/blog-posts/:id', async (request, response) => {
+  try {
+    await sanityClient.delete(request.params.id);
+    response.json({ message: 'Blog post deleted.' });
+  } catch (error) {
+    response.status(500).json({ message: 'Failed to delete blog post.' });
+  }
+});
+
+app.post('/api/placement-packages', async (request, response) => {
+  const parsed = placementPackageSchema.safeParse(request.body);
+  if (!parsed.success) return response.status(400).json({ message: 'Invalid placement package data.' });
+
+  try {
+    const existing = await sanityClient.fetch(`*[_type == "placementPackage" && slug == $slug][0]`, { slug: parsed.data.slug });
+    if (existing) {
+      return response.status(409).json({ message: 'Package slug already exists.' });
+    }
+
+    const created = await sanityClient.create({
+      _type: 'placementPackage',
+      ...parsed.data,
+    });
+    response.status(201).json(created);
+  } catch (error) {
+    response.status(500).json({ message: 'Failed to add placement package.' });
+  }
+});
+
+app.put('/api/placement-packages/:id', async (request, response) => {
+  const parsed = placementPackageSchema.safeParse(request.body);
+  if (!parsed.success) return response.status(400).json({ message: 'Invalid placement package data.' });
+
+  try {
+    const updated = await sanityClient.patch(request.params.id).set(parsed.data).commit();
+    response.json(updated);
+  } catch (error) {
+    response.status(500).json({ message: 'Failed to update placement package.' });
+  }
+});
+
+app.delete('/api/placement-packages/:id', async (request, response) => {
+  try {
+    await sanityClient.delete(request.params.id);
+    response.json({ message: 'Placement package deleted.' });
+  } catch (error) {
+    response.status(500).json({ message: 'Failed to delete placement package.' });
   }
 });
 

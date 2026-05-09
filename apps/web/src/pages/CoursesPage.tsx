@@ -5,6 +5,7 @@ import { SectionEyebrow, SectionTitle } from '../components/ui/SectionIntro';
 import { sanityClient } from '../lib/sanity';
 import { useSanityData } from '../lib/useSanityData';
 import { useToast } from '../components/toast/ToastProvider';
+import { API_BASE } from '../config/api';
 
 const categories = ['All', 'Development', 'Testing', 'Analytics'];
 const whatsappNumber = '+917385490573';
@@ -136,9 +137,19 @@ export default function CoursesPage() {
 
     try {
       if (manageData._id) {
-        await sanityClient.patch(manageData._id).set(payload).commit();
+        const response = await fetch(`${API_BASE}/api/courses/${manageData._id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) throw new Error('Failed to update course');
       } else {
-        await sanityClient.create(payload);
+        const response = await fetch(`${API_BASE}/api/courses`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) throw new Error('Failed to create course');
       }
       setIsManaging(false);
       await fetchCourses();
@@ -155,7 +166,10 @@ export default function CoursesPage() {
     if (!isConfirmingDelete) return;
     setIsSaving(true);
     try {
-      await sanityClient.delete(isConfirmingDelete);
+      const response = await fetch(`${API_BASE}/api/courses/${isConfirmingDelete}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete course');
       setIsConfirmingDelete(null);
       await fetchCourses();
       showToast('Course Deleted', 'The program has been removed from the catalog.', 'success');

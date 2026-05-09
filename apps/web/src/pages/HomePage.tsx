@@ -31,6 +31,7 @@ import { careerPackages, type CareerPackage } from '../lib/payment';
 import { sanityClient } from '../lib/sanity';
 import { useSanityData } from '../lib/useSanityData';
 import { useToast } from '../components/toast/ToastProvider';
+import { API_BASE } from '../config/api';
 
 const stats = [
   { value: 5000, suffix: '+', label: 'Resumes Written' },
@@ -518,6 +519,10 @@ function parsePriceToAmount(price: string) {
   return Number.isFinite(value) ? value * 100 : 0;
 }
 
+function formatDisplayPriceFromRupees(amountInRupees: number) {
+  return `Rs ${Math.round(amountInRupees)}`;
+}
+
 function serializeList(items: string[] = []) {
   return items.join('\n');
 }
@@ -729,9 +734,11 @@ export default function HomePage() {
 
   function openPackageManage(pkg?: CareerPackage) {
     if (pkg) {
+      const amountInRupees = Number.isFinite(pkg.amount) ? pkg.amount / 100 : Number(pkg.price.replace(/[^\d]/g, ''));
       setPackageForm({
         ...pkg,
-        amount: String(pkg.amount / 100),
+        price: formatDisplayPriceFromRupees(amountInRupees),
+        amount: String(amountInRupees),
         features: serializeList(pkg.features),
       });
     } else {
@@ -752,22 +759,33 @@ export default function HomePage() {
     setIsSavingPackage(true);
 
     const amountInRupees = Number(packageForm.amount) || Number(packageForm.price.replace(/[^\d]/g, ''));
+    const normalizedRupees = Math.max(1, Math.round(amountInRupees));
     const payload = {
       _type: 'placementPackage',
       slug: packageForm.slug || slugify(packageForm.name),
       name: packageForm.name,
       experience: packageForm.experience,
-      price: packageForm.price,
-      amount: amountInRupees > 0 ? amountInRupees * 100 : parsePriceToAmount(packageForm.price),
+      price: formatDisplayPriceFromRupees(normalizedRupees),
+      amount: normalizedRupees > 0 ? normalizedRupees * 100 : parsePriceToAmount(packageForm.price),
       currency: 'INR' as const,
       features: parseList(packageForm.features),
     };
 
     try {
       if (packageForm._id) {
-        await sanityClient.patch(packageForm._id).set(payload).commit();
+        const response = await fetch(`${API_BASE}/api/placement-packages/${packageForm._id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) throw new Error('Failed to update package');
       } else {
-        await sanityClient.create(payload);
+        const response = await fetch(`${API_BASE}/api/placement-packages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) throw new Error('Failed to create package');
       }
       setIsManagingPackage(false);
       await fetchCareerPackages();
@@ -785,7 +803,10 @@ export default function HomePage() {
     setIsSavingPackage(true);
 
     try {
-      await sanityClient.delete(isConfirmingPackageDelete);
+      const response = await fetch(`${API_BASE}/api/placement-packages/${isConfirmingPackageDelete}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete package');
       setIsConfirmingPackageDelete(null);
       if (selectedCareerPackage?._id === isConfirmingPackageDelete) setSelectedCareerPackage(null);
       await fetchCareerPackages();
@@ -1071,11 +1092,11 @@ export default function HomePage() {
                   </div>
                   <div className="admin-field">
                     <label>Display Price</label>
-                    <input className="admin-input" type="text" value={packageForm.price} onChange={event => setPackageForm({...packageForm, price: event.target.value})} required placeholder="e.g. Rs 3499" />
+                    <input className="admin-input" type="text" value={packageForm.price || (packageForm.amount ? formatDisplayPriceFromRupees(Number(packageForm.amount)) : '')} readOnly aria-readonly="true" placeholder="Auto from payment amount" />
                   </div>
                   <div className="admin-field">
                     <label>Payment Amount (INR)</label>
-                    <input className="admin-input" type="number" min="1" value={packageForm.amount} onChange={event => setPackageForm({...packageForm, amount: event.target.value})} required placeholder="3499" />
+                    <input className="admin-input" type="number" min="1" value={packageForm.amount} onChange={event => setPackageForm({...packageForm, amount: event.target.value, price: event.target.value ? formatDisplayPriceFromRupees(Number(event.target.value)) : ''})} required placeholder="3499" />
                   </div>
                 </div>
               </div>
