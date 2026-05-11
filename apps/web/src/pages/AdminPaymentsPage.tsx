@@ -63,8 +63,9 @@ function formatDate(value?: string) {
 }
 
 function DetailItem({ label, value }: { label: string; value?: string | number | null }) {
+  const isTechnicalValue = /id|slug/i.test(label);
   return (
-    <div className="payment-detail-item">
+    <div className={`payment-detail-item ${isTechnicalValue ? 'payment-detail-item-technical' : ''}`}>
       <span>{label}</span>
       <strong>{value || 'Not available'}</strong>
     </div>

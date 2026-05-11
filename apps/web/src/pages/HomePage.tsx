@@ -43,6 +43,14 @@ const stats = [
   { value: 98, suffix: '%', label: 'Candidates Placed' },
   { value: 15, suffix: '+', label: 'Countries Served' },
 ];
+type HomeStat = {
+  _id?: string;
+  label: string;
+  value: number;
+  suffix: string;
+  order?: number;
+  isVisible?: boolean;
+};
 
 const aboutCards = [
   {
@@ -549,6 +557,7 @@ export default function HomePage() {
   const { showToast } = useToast();
   const { data: sanityCareerPackages, loading: packagesLoading } = useSanityData<CareerPackage[]>(`*[_type == "placementPackage"] | order(amount asc)`);
   const { data: sanityTestimonials, loading: testimonialsLoading } = useSanityData<Testimonial[]>(`*[_type == "testimonial"] | order(_createdAt desc)`);
+  const { data: sanityHomeStats, loading: homeStatsLoading } = useSanityData<HomeStat[]>(`*[_type == "homeStat"] | order(order asc, _createdAt asc)`);
   const [activeIndex, setActiveIndex] = useState(0);
   const [testimonialDirection, setTestimonialDirection] = useState<-1 | 0 | 1>(0);
   const [isTestimonialAnimating, setIsTestimonialAnimating] = useState(false);
@@ -556,6 +565,7 @@ export default function HomePage() {
   const [selectedCareerOffering, setSelectedCareerOffering] = useState<(typeof careerOfferings)[number] | null>(null);
   const [dynamicCareerPackages, setDynamicCareerPackages] = useState<CareerPackage[]>(careerPackages);
   const [dynamicTestimonials, setDynamicTestimonials] = useState<Testimonial[]>(defaultTestimonials);
+  const [dynamicHomeStats, setDynamicHomeStats] = useState<HomeStat[]>(stats.map((item, index) => ({ ...item, order: index })));
   const [selectedCareerPackage, setSelectedCareerPackage] = useState<CareerPackage | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [hasSeededPackages, setHasSeededPackages] = useState(false);
@@ -566,6 +576,16 @@ export default function HomePage() {
   const [isManagingTestimonial, setIsManagingTestimonial] = useState(false);
   const [isSavingTestimonial, setIsSavingTestimonial] = useState(false);
   const [isConfirmingTestimonialDelete, setIsConfirmingTestimonialDelete] = useState<string | null>(null);
+  const [hasSeededHomeStats, setHasSeededHomeStats] = useState(false);
+  const [isManagingStat, setIsManagingStat] = useState(false);
+  const [isSavingStat, setIsSavingStat] = useState(false);
+  const [isConfirmingStatDelete, setIsConfirmingStatDelete] = useState<string | null>(null);
+  const [statForm, setStatForm] = useState<any>({
+    label: '',
+    value: 0,
+    suffix: '',
+    order: 0,
+  });
   const [testimonialForm, setTestimonialForm] = useState<any>({
     name: '',
     role: '',
@@ -586,6 +606,8 @@ export default function HomePage() {
   const packageConfirmDialogRef = useRef<HTMLDialogElement | null>(null);
   const testimonialManageDialogRef = useRef<HTMLDialogElement | null>(null);
   const testimonialConfirmDialogRef = useRef<HTMLDialogElement | null>(null);
+  const statManageDialogRef = useRef<HTMLDialogElement | null>(null);
+  const statConfirmDialogRef = useRef<HTMLDialogElement | null>(null);
   const visibleTestimonialsCount = (isAdmin
     ? dynamicTestimonials
     : dynamicTestimonials.filter((item) => item.isVisible !== false)).length;
@@ -605,6 +627,12 @@ export default function HomePage() {
       setDynamicTestimonials(sanityTestimonials);
     }
   }, [sanityTestimonials]);
+
+  useEffect(() => {
+    if (sanityHomeStats && sanityHomeStats.length > 0) {
+      setDynamicHomeStats(sanityHomeStats);
+    }
+  }, [sanityHomeStats]);
 
   useEffect(() => {
     const seedDefaultPackages = async () => {
@@ -655,6 +683,32 @@ export default function HomePage() {
 
     void seedDefaultTestimonials();
   }, [hasSeededTestimonials, isAdmin, testimonialsLoading, sanityTestimonials]);
+
+  useEffect(() => {
+    const seedDefaultHomeStats = async () => {
+      if (!isAdmin || hasSeededHomeStats || homeStatsLoading || !sanityHomeStats || sanityHomeStats.length > 0) return;
+      setHasSeededHomeStats(true);
+
+      try {
+        await Promise.all(
+          stats.map((item, index) =>
+            sanityClient.createIfNotExists({
+              ...item,
+              order: index,
+              isVisible: true,
+              _id: `homeStat-${slugify(item.label)}-${index + 1}`,
+              _type: 'homeStat',
+            }),
+          ),
+        );
+        await fetchHomeStats();
+      } catch (error) {
+        console.error('Home stats seed error:', error);
+      }
+    };
+
+    void seedDefaultHomeStats();
+  }, [hasSeededHomeStats, homeStatsLoading, isAdmin, sanityHomeStats]);
 
   useEffect(() => {
     const dialog = careerPackageDialogRef.current;
@@ -711,6 +765,26 @@ export default function HomePage() {
       dialog.close();
     }
   }, [isConfirmingTestimonialDelete]);
+
+  useEffect(() => {
+    const dialog = statManageDialogRef.current;
+    if (!dialog) return;
+    if (isManagingStat) {
+      if (!dialog.open) dialog.showModal();
+    } else if (dialog.open) {
+      dialog.close();
+    }
+  }, [isManagingStat]);
+
+  useEffect(() => {
+    const dialog = statConfirmDialogRef.current;
+    if (!dialog) return;
+    if (isConfirmingStatDelete) {
+      if (!dialog.open) dialog.showModal();
+    } else if (dialog.open) {
+      dialog.close();
+    }
+  }, [isConfirmingStatDelete]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -829,6 +903,15 @@ export default function HomePage() {
       setDynamicTestimonials(data.length > 0 ? data : defaultTestimonials);
     } catch (error) {
       console.error('Failed to fetch testimonials');
+    }
+  }
+
+  async function fetchHomeStats() {
+    try {
+      const data = await sanityClient.fetch<HomeStat[]>(`*[_type == "homeStat"] | order(order asc, _createdAt asc)`);
+      setDynamicHomeStats(data.length > 0 ? data : stats.map((item, index) => ({ ...item, order: index })));
+    } catch (error) {
+      console.error('Failed to fetch home stats');
     }
   }
 
@@ -1056,7 +1139,105 @@ export default function HomePage() {
     }
   }
 
+  function openStatManage(item?: HomeStat) {
+    if (item) {
+      setStatForm({ ...item });
+    } else {
+      setStatForm({
+        label: '',
+        value: 0,
+        suffix: '',
+        order: dynamicHomeStats.length,
+      });
+    }
+    setIsManagingStat(true);
+  }
+
+  async function handleSaveStat(event: React.FormEvent) {
+    event.preventDefault();
+    setIsSavingStat(true);
+    const payload = {
+      label: statForm.label,
+      value: Number(statForm.value) || 0,
+      suffix: String(statForm.suffix || ''),
+      order: Number(statForm.order) || 0,
+      isVisible: statForm.isVisible !== false,
+    };
+    try {
+      if (statForm._id) {
+        const response = await fetch(`${API_BASE}/api/home-stats/${statForm._id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) throw new Error('Failed to update stat');
+      } else {
+        const response = await fetch(`${API_BASE}/api/home-stats`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) throw new Error('Failed to create stat');
+      }
+      setIsManagingStat(false);
+      await fetchHomeStats();
+      showToast('Stat Saved', `${payload.label} has been updated successfully.`, 'success');
+    } catch (error) {
+      console.error('Home stat save error:', error);
+      showToast('Save Failed', 'Could not save the stat.', 'error');
+    } finally {
+      setIsSavingStat(false);
+    }
+  }
+
+  async function confirmStatDelete() {
+    if (!isConfirmingStatDelete) return;
+    setIsSavingStat(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/home-stats/${isConfirmingStatDelete}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete stat');
+      setIsConfirmingStatDelete(null);
+      await fetchHomeStats();
+      showToast('Stat Deleted', 'The stat has been removed.', 'success');
+    } catch (error) {
+      console.error('Home stat delete error:', error);
+      showToast('Delete Failed', 'Could not delete the stat.', 'error');
+    } finally {
+      setIsSavingStat(false);
+    }
+  }
+
+  async function toggleStatVisibility(item: HomeStat) {
+    if (!item._id) return;
+    setIsSavingStat(true);
+    const payload = {
+      label: item.label,
+      value: item.value,
+      suffix: item.suffix,
+      order: item.order || 0,
+      isVisible: item.isVisible === false,
+    };
+    try {
+      const response = await fetch(`${API_BASE}/api/home-stats/${item._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error('Failed to update stat visibility');
+      await fetchHomeStats();
+      showToast(item.isVisible === false ? 'Stat Unhidden' : 'Stat Hidden', `${item.label} visibility updated.`, 'success');
+    } catch (error) {
+      console.error('Home stat visibility error:', error);
+      showToast('Update Failed', 'Could not update stat visibility.', 'error');
+    } finally {
+      setIsSavingStat(false);
+    }
+  }
+
   const visiblePlacementPackages = isAdmin ? dynamicCareerPackages : dynamicCareerPackages.filter((pkg) => pkg.isVisible !== false);
+  const visibleHomeStats = isAdmin ? dynamicHomeStats : dynamicHomeStats.filter((item) => item.isVisible !== false);
 
   return (
     <main>
@@ -1382,9 +1563,30 @@ export default function HomePage() {
 
       <section className="stats-band">
         <div className="container-custom">
+          {isAdmin ? (
+            <div className="flex-between" style={{ marginBottom: '1rem' }}>
+              <span className="time-chip">Admin mode</span>
+              <button type="button" className="btn btn-sm btn-minimalist" style={{ border: '1px solid hsl(var(--border))', borderRadius: '0.75rem', padding: '0.5rem 1rem' }} onClick={() => openStatManage()}>
+                <Plus size={16} /> New Stat
+              </button>
+            </div>
+          ) : null}
           <div className="stats-grid stats-grid-5">
-            {stats.map((stat) => (
+            {visibleHomeStats.map((stat) => (
               <div key={stat.label} className="stat-card">
+                {isAdmin && stat._id ? (
+                  <div className="admin-actions" style={{ justifyContent: 'center', marginBottom: '0.5rem' }}>
+                    <button type="button" className="icon-btn-small" title={stat.isVisible === false ? 'Unhide stat' : 'Hide stat'} onClick={() => toggleStatVisibility(stat)}>
+                      {stat.isVisible === false ? <Eye size={14} /> : <EyeOff size={14} />}
+                    </button>
+                    <button type="button" className="icon-btn-small" title="Edit stat" onClick={() => openStatManage(stat)}>
+                      <Edit2 size={14} />
+                    </button>
+                    <button type="button" className="icon-btn-small text-danger" title="Delete stat" onClick={() => setIsConfirmingStatDelete(stat._id || null)}>
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ) : null}
                 <Counter target={stat.value} suffix={stat.suffix} />
                 <p>{stat.label}</p>
               </div>
@@ -1392,6 +1594,64 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <dialog ref={statManageDialogRef} className="course-modal" onClose={() => setIsManagingStat(false)}>
+        <div className="admin-modal-panel">
+          <div className="admin-header">
+            <h2>{statForm._id ? 'Refine Stat' : 'Create New Stat'}</h2>
+            <button type="button" className="course-modal-close" onClick={() => setIsManagingStat(false)}><X /></button>
+          </div>
+          <form onSubmit={handleSaveStat}>
+            <div className="admin-form-body">
+              <div className="form-section">
+                <span className="form-section-title">Stat Information</span>
+                <div className="admin-form-grid">
+                  <div className="admin-field">
+                    <label>Label</label>
+                    <input className="admin-input" type="text" value={statForm.label} onChange={event => setStatForm({...statForm, label: event.target.value})} required placeholder="e.g. Resumes Written" />
+                  </div>
+                  <div className="admin-field">
+                    <label>Value</label>
+                    <input className="admin-input" type="number" min="0" value={statForm.value} onChange={event => setStatForm({...statForm, value: event.target.value})} required />
+                  </div>
+                  <div className="admin-field">
+                    <label>Suffix</label>
+                    <input className="admin-input" type="text" value={statForm.suffix} onChange={event => setStatForm({...statForm, suffix: event.target.value})} placeholder="+ or %" />
+                  </div>
+                  <div className="admin-field">
+                    <label>Order</label>
+                    <input className="admin-input" type="number" min="0" value={statForm.order} onChange={event => setStatForm({...statForm, order: event.target.value})} required />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="admin-footer">
+              <button type="button" className="btn-admin-cancel" onClick={() => setIsManagingStat(false)} disabled={isSavingStat}>Cancel</button>
+              <button type="submit" className="btn-admin-save" disabled={isSavingStat}>
+                {isSavingStat ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </dialog>
+
+      <dialog ref={statConfirmDialogRef} className="course-modal" onClose={() => setIsConfirmingStatDelete(null)}>
+        <div className="confirm-modal-panel glass">
+          <div className="confirm-icon-wrap">
+            <Trash2 size={32} />
+          </div>
+          <h2 className="confirm-title">Are you sure?</h2>
+          <p className="confirm-text">
+            This action will permanently delete the stat. This cannot be undone.
+          </p>
+          <div className="confirm-actions">
+            <button className="btn btn-ghost flex-1" onClick={() => setIsConfirmingStatDelete(null)} disabled={isSavingStat}>No, Cancel</button>
+            <button className="btn btn-danger flex-1" onClick={confirmStatDelete} disabled={isSavingStat}>
+              {isSavingStat ? 'Deleting...' : 'Yes, Delete'}
+            </button>
+          </div>
+        </div>
+      </dialog>
 
       <section className="section-padding overflow-hidden">
         <div className="container-custom mb-12">
