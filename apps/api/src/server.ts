@@ -77,6 +77,13 @@ const blogPostSchema = z.object({
   isVisible: z.boolean().optional().default(true),
 });
 
+const qaEntrySchema = z.object({
+  question: z.string().trim().min(1),
+  answer: z.string().trim().min(1),
+  experienceRange: z.enum(['0-2yr', '3-5yr', '6-8yr', '8+yr']),
+  isVisible: z.boolean().optional().default(true),
+});
+
 const careerOpeningSchema = z.object({
   title: z.string().trim().min(1),
   type: z.string().trim().min(1),
@@ -387,6 +394,42 @@ app.delete('/api/blog-posts/:id', async (request, response) => {
     response.json({ message: 'Blog post deleted.' });
   } catch (error) {
     response.status(500).json({ message: 'Failed to delete blog post.' });
+  }
+});
+
+app.post('/api/qa-entries', async (request, response) => {
+  const parsed = qaEntrySchema.safeParse(request.body);
+  if (!parsed.success) return response.status(400).json({ message: 'Invalid Q&A data.' });
+
+  try {
+    const created = await sanityClient.create({
+      _type: 'qaEntry',
+      ...parsed.data,
+    });
+    response.status(201).json(created);
+  } catch (error) {
+    response.status(500).json({ message: 'Failed to add Q&A entry.' });
+  }
+});
+
+app.put('/api/qa-entries/:id', async (request, response) => {
+  const parsed = qaEntrySchema.safeParse(request.body);
+  if (!parsed.success) return response.status(400).json({ message: 'Invalid Q&A data.' });
+
+  try {
+    const updated = await sanityClient.patch(request.params.id).set(parsed.data).commit();
+    response.json(updated);
+  } catch (error) {
+    response.status(500).json({ message: 'Failed to update Q&A entry.' });
+  }
+});
+
+app.delete('/api/qa-entries/:id', async (request, response) => {
+  try {
+    await sanityClient.delete(request.params.id);
+    response.json({ message: 'Q&A entry deleted.' });
+  } catch (error) {
+    response.status(500).json({ message: 'Failed to delete Q&A entry.' });
   }
 });
 
