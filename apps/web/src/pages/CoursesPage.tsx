@@ -1,4 +1,4 @@
-import { ArrowRight, Atom, ChartColumn, Check, CreditCard, Database, Edit2, Lock, MessageCircle, Plus, Smartphone, Terminal, TestTube, Trash2, X } from 'lucide-react';
+import { ArrowRight, Atom, ChartColumn, Check, CreditCard, Database, Edit2, Eye, EyeOff, Lock, MessageCircle, Plus, Smartphone, Terminal, TestTube, Trash2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Reveal } from '../components/ui/Reveal';
 import { SectionEyebrow, SectionTitle } from '../components/ui/SectionIntro';
@@ -45,6 +45,7 @@ interface Course {
   curriculum: string[];
   learn: string[];
   outcomes: string[];
+  isVisible?: boolean;
 }
 
 export default function CoursesPage() {
@@ -57,7 +58,7 @@ export default function CoursesPage() {
   const [isManaging, setIsManaging] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [manageData, setManageData] = useState<any>({
-    title: '', icon: 'Terminal', cat: 'Development', duration: '', durationNumber: '6', durationUnit: 'Months', highlights: '', timeline: '', curriculum: '', learn: '', outcomes: ''
+    title: '', icon: 'Terminal', cat: 'Development', duration: '', durationNumber: '6', durationUnit: 'Months', highlights: '', timeline: '', curriculum: '', learn: '', outcomes: '', isVisible: true
   });
   const [isIconDropdownOpen, setIsIconDropdownOpen] = useState(false);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState<string | null>(null);
@@ -86,7 +87,8 @@ export default function CoursesPage() {
     }
   };
 
-  const filtered = category === 'All' ? courses : courses.filter((course) => course.cat === category);
+  const visibleCourses = isAdmin ? courses : courses.filter((course) => course.isVisible !== false);
+  const filtered = category === 'All' ? visibleCourses : visibleCourses.filter((course) => course.cat === category);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -133,6 +135,7 @@ export default function CoursesPage() {
       curriculum: manageData.curriculum.split('\n').map((s: string) => s.trim()).filter(Boolean),
       learn: manageData.learn.split('\n').map((s: string) => s.trim()).filter(Boolean),
       outcomes: manageData.outcomes.split('\n').map((s: string) => s.trim()).filter(Boolean),
+      isVisible: manageData.isVisible !== false,
     };
 
     try {
@@ -181,6 +184,39 @@ export default function CoursesPage() {
     }
   };
 
+  const toggleCourseVisibility = async (course: Course) => {
+    if (!course._id) return;
+    setIsSaving(true);
+    const payload = {
+      title: course.title,
+      icon: course.icon,
+      cat: course.cat,
+      duration: course.duration,
+      timeline: course.timeline,
+      highlights: course.highlights || [],
+      curriculum: course.curriculum || [],
+      learn: course.learn || [],
+      outcomes: course.outcomes || [],
+      isVisible: course.isVisible === false,
+    };
+
+    try {
+      const response = await fetch(`${API_BASE}/api/courses/${course._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error('Failed to update visibility');
+      await fetchCourses();
+      showToast(course.isVisible === false ? 'Course Unhidden' : 'Course Hidden', `${course.title} visibility updated.`, 'success');
+    } catch (err) {
+      console.error('Visibility update error:', err);
+      showToast('Update Failed', 'Could not update course visibility.', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const openManage = (course?: any) => {
     if (course) {
       setManageData({
@@ -194,7 +230,7 @@ export default function CoursesPage() {
     } else {
       setManageData({ 
         title: '', icon: 'Terminal', cat: 'Development', duration: '', durationNumber: '6', durationUnit: 'Months',
-        highlights: '', timeline: '', curriculum: '', learn: '', outcomes: '' 
+        highlights: '', timeline: '', curriculum: '', learn: '', outcomes: '', isVisible: true 
       });
     }
     setIsIconDropdownOpen(false);
@@ -262,6 +298,9 @@ export default function CoursesPage() {
                         </div>
                         {isAdmin && (
                           <div className="admin-actions">
+                            <button onClick={() => toggleCourseVisibility(course)} className="icon-btn-small" title={course.isVisible === false ? 'Unhide' : 'Hide'}>
+                              {course.isVisible === false ? <Eye size={14} /> : <EyeOff size={14} />}
+                            </button>
                             <button onClick={() => openManage(course)} className="icon-btn-small" title="Edit"><Edit2 size={14} /></button>
                             <button onClick={() => setIsConfirmingDelete(course.id || null)} className="icon-btn-small text-danger" title="Delete"><Trash2 size={14} /></button>
                           </div>

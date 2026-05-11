@@ -6,6 +6,8 @@ import {
   ChevronRight,
   CreditCard,
   Edit2,
+  Eye,
+  EyeOff,
   FileCheck,
   FileText,
   Globe,
@@ -579,6 +581,7 @@ export default function HomePage() {
           careerPackages.map((pkg) =>
             sanityClient.createIfNotExists({
               ...pkg,
+              isVisible: true,
               _id: `placementPackage-${pkg.slug}`,
               _type: 'placementPackage',
             }),
@@ -769,6 +772,7 @@ export default function HomePage() {
       amount: normalizedRupees > 0 ? normalizedRupees * 100 : parsePriceToAmount(packageForm.price),
       currency: 'INR' as const,
       features: parseList(packageForm.features),
+      isVisible: packageForm.isVisible !== false,
     };
 
     try {
@@ -818,6 +822,39 @@ export default function HomePage() {
       setIsSavingPackage(false);
     }
   }
+
+  async function togglePackageVisibility(pkg: CareerPackage) {
+    if (!pkg._id) return;
+    setIsSavingPackage(true);
+    const payload = {
+      slug: pkg.slug,
+      name: pkg.name,
+      experience: pkg.experience,
+      price: pkg.price,
+      amount: pkg.amount,
+      currency: 'INR' as const,
+      features: pkg.features || [],
+      isVisible: pkg.isVisible === false,
+    };
+
+    try {
+      const response = await fetch(`${API_BASE}/api/placement-packages/${pkg._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error('Failed to update package visibility');
+      await fetchCareerPackages();
+      showToast(pkg.isVisible === false ? 'Package Unhidden' : 'Package Hidden', `${pkg.name} visibility updated.`, 'success');
+    } catch (error) {
+      console.error('Placement package visibility error:', error);
+      showToast('Update Failed', 'Could not update package visibility.', 'error');
+    } finally {
+      setIsSavingPackage(false);
+    }
+  }
+
+  const visiblePlacementPackages = isAdmin ? dynamicCareerPackages : dynamicCareerPackages.filter((pkg) => pkg.isVisible !== false);
 
   return (
     <main>
@@ -1004,7 +1041,7 @@ export default function HomePage() {
             </div>
 
             <div className="career-package-row" aria-label="Placement support packages">
-              {dynamicCareerPackages.map((pkg) => (
+              {visiblePlacementPackages.map((pkg) => (
                 <div
                   key={pkg.name}
                   role="button"
@@ -1021,6 +1058,9 @@ export default function HomePage() {
                 >
                   {isAdmin && pkg._id ? (
                     <span className="career-package-admin-actions" onClick={(event) => event.stopPropagation()}>
+                      <button type="button" className="icon-btn-small" title={pkg.isVisible === false ? 'Unhide package' : 'Hide package'} onClick={() => togglePackageVisibility(pkg)}>
+                        {pkg.isVisible === false ? <Eye size={14} /> : <EyeOff size={14} />}
+                      </button>
                       <button type="button" className="icon-btn-small" title="Edit package" onClick={() => openPackageManage(pkg)}>
                         <Edit2 size={14} />
                       </button>

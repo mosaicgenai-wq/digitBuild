@@ -59,6 +59,7 @@ const courseSchema = z.object({
   curriculum: z.array(z.string()),
   learn: z.array(z.string()),
   outcomes: z.array(z.string()),
+  isVisible: z.boolean().optional().default(true),
 });
 
 const blogSectionSchema = z.object({
@@ -73,6 +74,7 @@ const blogPostSchema = z.object({
   excerpt: z.string().trim().min(1),
   intro: z.string().trim().min(1),
   sections: z.array(blogSectionSchema).min(1),
+  isVisible: z.boolean().optional().default(true),
 });
 
 const careerOpeningSchema = z.object({
@@ -87,6 +89,7 @@ const careerOpeningSchema = z.object({
   requirements: z.array(z.string().trim().min(1)).min(1),
   perks: z.array(z.string().trim().min(1)),
   applyNote: z.string().trim().min(1),
+  isVisible: z.boolean().optional().default(true),
 });
 
 const placementPackageSchema = z.object({
@@ -97,6 +100,7 @@ const placementPackageSchema = z.object({
   amount: z.number().int().positive(),
   currency: z.literal('INR'),
   features: z.array(z.string().trim().min(1)).min(1),
+  isVisible: z.boolean().optional().default(true),
 });
 
 const careerPackages = [

@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Edit2, Plus, Trash2, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Edit2, Eye, EyeOff, Plus, Trash2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Reveal } from '../components/ui/Reveal';
 import { SectionEyebrow, SectionTitle } from '../components/ui/SectionIntro';
@@ -28,6 +28,7 @@ interface BlogPost {
   excerpt: string;
   intro: string;
   sections: BlogSection[];
+  isVisible?: boolean;
 }
 
 const posts: BlogPost[] = [
@@ -308,6 +309,7 @@ export default function BlogPage() {
           posts.map((post) =>
             sanityClient.createIfNotExists({
               ...post,
+              isVisible: true,
               _id: `blogPost-${slugify(post.title)}`,
               _type: 'blogPost',
             }),
@@ -366,6 +368,7 @@ export default function BlogPage() {
         excerpt: '',
         intro: '',
         sections: '',
+        isVisible: true,
       });
     }
     setIsManaging(true);
@@ -383,6 +386,7 @@ export default function BlogPage() {
       excerpt: manageData.excerpt,
       intro: manageData.intro,
       sections: parseSections(manageData.sections),
+      isVisible: manageData.isVisible !== false,
     };
 
     try {
@@ -430,6 +434,38 @@ export default function BlogPage() {
       setIsSaving(false);
     }
   };
+
+  const togglePostVisibility = async (post: BlogPost) => {
+    if (!post._id) return;
+    setIsSaving(true);
+    const payload = {
+      title: post.title,
+      cat: post.cat,
+      date: post.date,
+      excerpt: post.excerpt,
+      intro: post.intro,
+      sections: post.sections || [],
+      isVisible: post.isVisible === false,
+    };
+
+    try {
+      const response = await fetch(`${API_BASE}/api/blog-posts/${post._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error('Failed to update visibility');
+      await fetchBlogPosts();
+      showToast(post.isVisible === false ? 'Blog Unhidden' : 'Blog Hidden', `${post.title} visibility updated.`, 'success');
+    } catch (err) {
+      console.error('Visibility update error:', err);
+      showToast('Update Failed', 'Could not update blog visibility.', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const visibleBlogPosts = isAdmin ? blogPosts : blogPosts.filter((post) => post.isVisible !== false);
 
   if (selected) {
     return (
@@ -495,13 +531,16 @@ export default function BlogPage() {
                 <p>Error: {error}</p>
                 <p style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>Showing local blog content when Sanity is unavailable.</p>
               </div>
-            ) : blogPosts.map((post, index) => (
+            ) : visibleBlogPosts.map((post, index) => (
               <Reveal key={post.title} delay={index * 0.05}>
                 <article className="blog-card">
                   <div className="blog-card-top">
                     <span className={`post-tag ${categoryClass(post.cat)}`}>{post.cat}</span>
                     {isAdmin && post._id && (
                       <div className="admin-actions">
+                        <button type="button" onClick={() => togglePostVisibility(post)} className="icon-btn-small" title={post.isVisible === false ? 'Unhide' : 'Hide'}>
+                          {post.isVisible === false ? <Eye size={14} /> : <EyeOff size={14} />}
+                        </button>
                         <button type="button" onClick={() => openManage(post)} className="icon-btn-small" title="Edit"><Edit2 size={14} /></button>
                         <button type="button" onClick={() => setIsConfirmingDelete(post._id || null)} className="icon-btn-small text-danger" title="Delete"><Trash2 size={14} /></button>
                       </div>
