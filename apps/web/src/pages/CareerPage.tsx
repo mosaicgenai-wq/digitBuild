@@ -1,4 +1,4 @@
-import { ArrowRight, BriefcaseBusiness, Clock3, Edit2, MapPin, Plus, Send, Trash2, Users, X } from 'lucide-react';
+import { ArrowRight, BriefcaseBusiness, Clock3, Edit2, Eye, EyeOff, MapPin, Plus, Send, Trash2, Users, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { ButtonLink } from '../components/ui/Button';
 import { Reveal } from '../components/ui/Reveal';
@@ -22,6 +22,7 @@ interface CareerOpening {
   requirements: string[];
   perks: string[];
   applyNote: string;
+  isVisible?: boolean;
 }
 
 const openings: CareerOpening[] = [
@@ -157,6 +158,7 @@ export default function CareerPage() {
           openings.map((opening) =>
             sanityClient.createIfNotExists({
               ...opening,
+              isVisible: true,
               _id: `careerOpening-${slugify(opening.title)}`,
               _type: 'careerOpening',
             }),
@@ -245,6 +247,7 @@ export default function CareerPage() {
         requirements: '',
         perks: '',
         applyNote: '',
+        isVisible: true,
       });
     }
     setIsManaging(true);
@@ -267,6 +270,7 @@ export default function CareerPage() {
       requirements: parseList(manageData.requirements),
       perks: parseList(manageData.perks),
       applyNote: manageData.applyNote,
+      isVisible: manageData.isVisible !== false,
     };
 
     try {
@@ -302,6 +306,23 @@ export default function CareerPage() {
       setIsSaving(false);
     }
   }
+
+  async function toggleOpeningVisibility(opening: CareerOpening) {
+    if (!opening._id) return;
+    setIsSaving(true);
+    try {
+      await sanityClient.patch(opening._id).set({ isVisible: opening.isVisible === false }).commit();
+      await fetchCareerOpenings();
+      showToast(opening.isVisible === false ? 'Opening Unhidden' : 'Opening Hidden', `${opening.title} visibility updated.`, 'success');
+    } catch (err) {
+      console.error('Career visibility error:', err);
+      showToast('Update Failed', 'Could not update opening visibility.', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  const visibleCareerOpenings = isAdmin ? careerOpenings : careerOpenings.filter((opening) => opening.isVisible !== false);
 
   return (
     <main className="pt-nav">
@@ -344,7 +365,7 @@ export default function CareerPage() {
                 <p>Error: {error}</p>
                 <p style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>Showing local career content when Sanity is unavailable.</p>
               </div>
-            ) : careerOpenings.map((opening, index) => (
+            ) : visibleCareerOpenings.map((opening, index) => (
               <Reveal key={opening.title} delay={index * 0.06}>
                 <div
                   className="career-card career-card-button"
@@ -362,6 +383,9 @@ export default function CareerPage() {
                     <span className="duration-chip">{opening.type}</span>
                     {isAdmin && opening._id ? (
                       <div className="admin-actions">
+                        <button type="button" onClick={(event) => { event.stopPropagation(); toggleOpeningVisibility(opening); }} className="icon-btn-small" title={opening.isVisible === false ? 'Unhide' : 'Hide'}>
+                          {opening.isVisible === false ? <Eye size={14} /> : <EyeOff size={14} />}
+                        </button>
                         <button type="button" onClick={(event) => { event.stopPropagation(); openManage(opening); }} className="icon-btn-small" title="Edit"><Edit2 size={14} /></button>
                         <button type="button" onClick={(event) => { event.stopPropagation(); setIsConfirmingDelete(opening._id || null); }} className="icon-btn-small text-danger" title="Delete"><Trash2 size={14} /></button>
                       </div>

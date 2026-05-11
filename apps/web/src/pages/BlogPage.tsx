@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Edit2, Plus, Trash2, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Edit2, Eye, EyeOff, Plus, Trash2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Reveal } from '../components/ui/Reveal';
 import { SectionEyebrow, SectionTitle } from '../components/ui/SectionIntro';
@@ -12,6 +12,20 @@ const colors = [
   { label: 'Industry Trends', color: 'tag-purple' },
   { label: 'Learning Guides', color: 'tag-amber' },
 ];
+const qaRanges = ['0-2yr', '3-5yr', '6-8yr', '8+yr'] as const;
+const qaRangeTags: Record<string, string> = {
+  '0-2yr': 'tag-primary',
+  '3-5yr': 'tag-purple',
+  '6-8yr': 'tag-amber',
+  '8+yr': 'tag-primary',
+};
+const qaRangeFilters = [
+  { label: 'All', value: 'all' },
+  { label: '0-2 Years', value: '0-2yr' },
+  { label: '3-5 Years', value: '3-5yr' },
+  { label: '6-8 Years', value: '6-8yr' },
+  { label: '8+ Years', value: '8+yr' },
+] as const;
 
 interface BlogSection {
   heading: string;
@@ -28,6 +42,17 @@ interface BlogPost {
   excerpt: string;
   intro: string;
   sections: BlogSection[];
+  isVisible?: boolean;
+}
+
+interface QAEntry {
+  _id?: string;
+  _createdAt?: string;
+  id?: string;
+  question: string;
+  answer: string;
+  experienceRange: (typeof qaRanges)[number];
+  isVisible?: boolean;
 }
 
 const posts: BlogPost[] = [
@@ -269,13 +294,19 @@ function formatDisplayDate(value: string) {
 export default function BlogPage() {
   const { showToast } = useToast();
   const { data: sanityPosts, loading, error } = useSanityData<BlogPost[]>(`*[_type == "blogPost"] | order(_createdAt desc)`);
+  const { data: sanityQAEntries, loading: qaLoading, error: qaError } = useSanityData<QAEntry[]>(`*[_type == "qaEntry"] | order(_createdAt desc)`);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>(posts);
+  const [qaEntries, setQaEntries] = useState<QAEntry[]>([]);
+  const [activeTab, setActiveTab] = useState<'blog' | 'qa'>('blog');
+  const [activeQARange, setActiveQARange] = useState<(typeof qaRangeFilters)[number]['value']>('all');
   const [selected, setSelected] = useState<BlogPost | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isManaging, setIsManaging] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasSeededPosts, setHasSeededPosts] = useState(false);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState<string | null>(null);
+  const [isManagingQA, setIsManagingQA] = useState(false);
+  const [isConfirmingQADelete, setIsConfirmingQADelete] = useState<string | null>(null);
   const [manageData, setManageData] = useState<any>({
     title: '',
     cat: 'Career Tips',
@@ -284,9 +315,17 @@ export default function BlogPage() {
     intro: '',
     sections: '',
   });
+  const [qaManageData, setQaManageData] = useState<any>({
+    question: '',
+    answer: '',
+    experienceRange: '0-2yr',
+    isVisible: true,
+  });
 
   const manageDialogRef = useRef<HTMLDialogElement | null>(null);
   const confirmDialogRef = useRef<HTMLDialogElement | null>(null);
+  const qaManageDialogRef = useRef<HTMLDialogElement | null>(null);
+  const qaConfirmDialogRef = useRef<HTMLDialogElement | null>(null);
 
   useEffect(() => {
     setIsAdmin(localStorage.getItem('isAuthenticated') === 'true' && localStorage.getItem('userRole') === 'admin');
@@ -299,6 +338,12 @@ export default function BlogPage() {
   }, [sanityPosts]);
 
   useEffect(() => {
+    if (sanityQAEntries) {
+      setQaEntries(sanityQAEntries.map((entry) => ({ ...entry, id: entry.id || entry._id })));
+    }
+  }, [sanityQAEntries]);
+
+  useEffect(() => {
     const seedDefaultPosts = async () => {
       if (!isAdmin || hasSeededPosts || loading || !sanityPosts || sanityPosts.length > 0) return;
       setHasSeededPosts(true);
@@ -308,6 +353,7 @@ export default function BlogPage() {
           posts.map((post) =>
             sanityClient.createIfNotExists({
               ...post,
+              isVisible: true,
               _id: `blogPost-${slugify(post.title)}`,
               _type: 'blogPost',
             }),
@@ -342,12 +388,41 @@ export default function BlogPage() {
     }
   }, [isConfirmingDelete]);
 
+  useEffect(() => {
+    const dialog = qaManageDialogRef.current;
+    if (!dialog) return;
+    if (isManagingQA) {
+      if (!dialog.open) dialog.showModal();
+    } else if (dialog.open) {
+      dialog.close();
+    }
+  }, [isManagingQA]);
+
+  useEffect(() => {
+    const dialog = qaConfirmDialogRef.current;
+    if (!dialog) return;
+    if (isConfirmingQADelete) {
+      if (!dialog.open) dialog.showModal();
+    } else if (dialog.open) {
+      dialog.close();
+    }
+  }, [isConfirmingQADelete]);
+
   const fetchBlogPosts = async () => {
     try {
       const data = await sanityClient.fetch<BlogPost[]>(`*[_type == "blogPost"] | order(_createdAt desc)`);
       setBlogPosts(data.map((post) => ({ ...post, id: post.id || post._id })));
     } catch (err) {
       console.error('Failed to fetch blog posts');
+    }
+  };
+
+  const fetchQAEntries = async () => {
+    try {
+      const data = await sanityClient.fetch<QAEntry[]>(`*[_type == "qaEntry"] | order(_createdAt desc)`);
+      setQaEntries(data.map((entry) => ({ ...entry, id: entry.id || entry._id })));
+    } catch (err) {
+      console.error('Failed to fetch Q&A entries');
     }
   };
 
@@ -366,9 +441,26 @@ export default function BlogPage() {
         excerpt: '',
         intro: '',
         sections: '',
+        isVisible: true,
       });
     }
     setIsManaging(true);
+  };
+
+  const openQAManage = (entry?: QAEntry) => {
+    if (entry) {
+      setQaManageData({
+        ...entry,
+      });
+    } else {
+      setQaManageData({
+        question: '',
+        answer: '',
+        experienceRange: '0-2yr',
+        isVisible: true,
+      });
+    }
+    setIsManagingQA(true);
   };
 
   const handleSavePost = async (e: React.FormEvent) => {
@@ -383,6 +475,7 @@ export default function BlogPage() {
       excerpt: manageData.excerpt,
       intro: manageData.intro,
       sections: parseSections(manageData.sections),
+      isVisible: manageData.isVisible !== false,
     };
 
     try {
@@ -431,6 +524,126 @@ export default function BlogPage() {
     }
   };
 
+  const handleSaveQA = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+
+    const payload = {
+      question: qaManageData.question,
+      answer: qaManageData.answer,
+      experienceRange: qaManageData.experienceRange,
+      isVisible: qaManageData.isVisible !== false,
+    };
+
+    try {
+      if (qaManageData._id) {
+        const response = await fetch(`${API_BASE}/api/qa-entries/${qaManageData._id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) throw new Error('Failed to update Q&A');
+      } else {
+        const response = await fetch(`${API_BASE}/api/qa-entries`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) throw new Error('Failed to create Q&A');
+      }
+      setIsManagingQA(false);
+      await fetchQAEntries();
+      showToast('Q&A Saved', 'Q&A entry has been updated successfully.', 'success');
+    } catch (err) {
+      console.error('Q&A save error:', err);
+      showToast('Save Failed', 'Could not save the Q&A entry.', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const confirmQADelete = async () => {
+    if (!isConfirmingQADelete) return;
+    setIsSaving(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/qa-entries/${isConfirmingQADelete}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete Q&A');
+      setIsConfirmingQADelete(null);
+      await fetchQAEntries();
+      showToast('Q&A Deleted', 'The Q&A entry has been removed.', 'success');
+    } catch (err) {
+      console.error('Q&A delete error:', err);
+      showToast('Delete Failed', 'Could not delete the Q&A entry.', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const togglePostVisibility = async (post: BlogPost) => {
+    if (!post._id) return;
+    setIsSaving(true);
+    const payload = {
+      title: post.title,
+      cat: post.cat,
+      date: post.date,
+      excerpt: post.excerpt,
+      intro: post.intro,
+      sections: post.sections || [],
+      isVisible: post.isVisible === false,
+    };
+
+    try {
+      const response = await fetch(`${API_BASE}/api/blog-posts/${post._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error('Failed to update visibility');
+      await fetchBlogPosts();
+      showToast(post.isVisible === false ? 'Blog Unhidden' : 'Blog Hidden', `${post.title} visibility updated.`, 'success');
+    } catch (err) {
+      console.error('Visibility update error:', err);
+      showToast('Update Failed', 'Could not update blog visibility.', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const toggleQAVisibility = async (entry: QAEntry) => {
+    if (!entry._id) return;
+    setIsSaving(true);
+    const payload = {
+      question: entry.question,
+      answer: entry.answer,
+      experienceRange: entry.experienceRange,
+      isVisible: entry.isVisible === false,
+    };
+
+    try {
+      const response = await fetch(`${API_BASE}/api/qa-entries/${entry._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error('Failed to update visibility');
+      await fetchQAEntries();
+      showToast(entry.isVisible === false ? 'Q&A Unhidden' : 'Q&A Hidden', `${entry.question.slice(0, 40)}... visibility updated.`, 'success');
+    } catch (err) {
+      console.error('Q&A visibility error:', err);
+      showToast('Update Failed', 'Could not update Q&A visibility.', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const visibleBlogPosts = isAdmin ? blogPosts : blogPosts.filter((post) => post.isVisible !== false);
+  const visibleQAEntries = isAdmin ? qaEntries : qaEntries.filter((entry) => entry.isVisible !== false);
+  const filteredQAEntries = activeQARange === 'all'
+    ? visibleQAEntries
+    : visibleQAEntries.filter((entry) => entry.experienceRange === activeQARange);
+
   if (selected) {
     return (
       <main className="pt-nav">
@@ -476,32 +689,53 @@ export default function BlogPage() {
             <SectionTitle as="h1" className="mb-3">Insights &amp; guides</SectionTitle>
             <p className="page-hero-copy">Tips on careers, tech, and learning.</p>
           </Reveal>
+          <div className="filter-row" style={{ marginBottom: '1.5rem' }}>
+            <button type="button" className={`filter-chip ${activeTab === 'blog' ? 'is-active' : ''}`} onClick={() => setActiveTab('blog')}>Blog</button>
+            <button type="button" className={`filter-chip ${activeTab === 'qa' ? 'is-active' : ''}`} onClick={() => setActiveTab('qa')}>Q&amp;A</button>
+          </div>
+          {activeTab === 'qa' && (
+            <div className="filter-row" style={{ marginBottom: '1.5rem' }}>
+              {qaRangeFilters.map((item) => (
+                <button
+                  key={item.value}
+                  type="button"
+                  className={`filter-chip ${activeQARange === item.value ? 'is-active' : ''}`}
+                  onClick={() => setActiveQARange(item.value)}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          )}
           {isAdmin && (
             <div className="flex-between mb-12">
               <span className="time-chip">Admin mode</span>
-              <button onClick={() => openManage()} className="btn btn-sm btn-minimalist" style={{ border: '1px solid hsl(var(--border))', borderRadius: '0.75rem', padding: '0.5rem 1rem' }}>
-                <Plus size={16} /> New Blog
+              <button onClick={() => activeTab === 'blog' ? openManage() : openQAManage()} className="btn btn-sm btn-minimalist" style={{ border: '1px solid hsl(var(--border))', borderRadius: '0.75rem', padding: '0.5rem 1rem' }}>
+                <Plus size={16} /> {activeTab === 'blog' ? 'New Blog' : 'New Q&A'}
               </button>
             </div>
           )}
-          <h2 className="sr-only">Latest blog posts</h2>
+          <h2 className="sr-only">{activeTab === 'blog' ? 'Latest blog posts' : 'Career Q&A'}</h2>
           <div className="card-grid card-grid-3">
-            {loading ? (
+            {activeTab === 'blog' && loading ? (
               <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem' }}>
                 <p>Loading blog posts...</p>
               </div>
-            ) : error && blogPosts.length === 0 ? (
+            ) : activeTab === 'blog' && error && blogPosts.length === 0 ? (
               <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem', color: 'hsl(var(--destructive))' }}>
                 <p>Error: {error}</p>
                 <p style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>Showing local blog content when Sanity is unavailable.</p>
               </div>
-            ) : blogPosts.map((post, index) => (
+            ) : activeTab === 'blog' ? visibleBlogPosts.map((post, index) => (
               <Reveal key={post.title} delay={index * 0.05}>
                 <article className="blog-card">
                   <div className="blog-card-top">
                     <span className={`post-tag ${categoryClass(post.cat)}`}>{post.cat}</span>
                     {isAdmin && post._id && (
                       <div className="admin-actions">
+                        <button type="button" onClick={() => togglePostVisibility(post)} className="icon-btn-small" title={post.isVisible === false ? 'Unhide' : 'Hide'}>
+                          {post.isVisible === false ? <Eye size={14} /> : <EyeOff size={14} />}
+                        </button>
                         <button type="button" onClick={() => openManage(post)} className="icon-btn-small" title="Edit"><Edit2 size={14} /></button>
                         <button type="button" onClick={() => setIsConfirmingDelete(post._id || null)} className="icon-btn-small text-danger" title="Delete"><Trash2 size={14} /></button>
                       </div>
@@ -515,6 +749,37 @@ export default function BlogPage() {
                       Read <ArrowRight className="inline-link-icon" />
                     </button>
                   </div>
+                </article>
+              </Reveal>
+            )) : qaLoading ? (
+              <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem' }}>
+                <p>Loading Q&A entries...</p>
+              </div>
+            ) : qaError && qaEntries.length === 0 ? (
+              <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem', color: 'hsl(var(--destructive))' }}>
+                <p>Error: {qaError}</p>
+              </div>
+            ) : filteredQAEntries.length === 0 ? (
+              <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem' }}>
+                <p>No Q&A entries found for this experience range.</p>
+              </div>
+            ) : filteredQAEntries.map((entry, index) => (
+              <Reveal key={entry._id || entry.question} delay={index * 0.05}>
+                <article className="blog-card">
+                  <div className="blog-card-top">
+                    <span className={`post-tag ${qaRangeTags[entry.experienceRange] || 'tag-primary'}`}>{entry.experienceRange}</span>
+                    {isAdmin && entry._id && (
+                      <div className="admin-actions">
+                        <button type="button" onClick={() => toggleQAVisibility(entry)} className="icon-btn-small" title={entry.isVisible === false ? 'Unhide' : 'Hide'}>
+                          {entry.isVisible === false ? <Eye size={14} /> : <EyeOff size={14} />}
+                        </button>
+                        <button type="button" onClick={() => openQAManage(entry)} className="icon-btn-small" title="Edit"><Edit2 size={14} /></button>
+                        <button type="button" onClick={() => setIsConfirmingQADelete(entry._id || null)} className="icon-btn-small text-danger" title="Delete"><Trash2 size={14} /></button>
+                      </div>
+                    )}
+                  </div>
+                  <h3>{entry.question}</h3>
+                  <p className="blog-excerpt">{entry.answer}</p>
                 </article>
               </Reveal>
             ))}
@@ -596,6 +861,78 @@ export default function BlogPage() {
           <div className="confirm-actions">
             <button className="btn btn-ghost flex-1" onClick={() => setIsConfirmingDelete(null)} disabled={isSaving}>No, Cancel</button>
             <button className="btn btn-danger flex-1" onClick={confirmDelete} disabled={isSaving}>
+              {isSaving ? 'Deleting...' : 'Yes, Delete'}
+            </button>
+          </div>
+        </div>
+      </dialog>
+
+      <dialog ref={qaManageDialogRef} className="course-modal" onClose={() => setIsManagingQA(false)}>
+        <div className="admin-modal-panel">
+          <div className="admin-header">
+            <h2>{qaManageData._id ? 'Refine Q&A' : 'Create New Q&A'}</h2>
+            <button type="button" className="course-modal-close" onClick={() => setIsManagingQA(false)}><X /></button>
+          </div>
+
+          <form onSubmit={handleSaveQA}>
+            <div className="admin-form-body">
+              <div className="form-section">
+                <span className="form-section-title">Q&A Information</span>
+                <div className="qa-range-row">
+                  {qaRanges.map((range) => (
+                    <button
+                      key={range}
+                      type="button"
+                      className={`qa-range-chip ${qaManageData.experienceRange === range ? 'is-active' : ''}`}
+                      onClick={() => setQaManageData({ ...qaManageData, experienceRange: range })}
+                    >
+                      {range}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-section qa-editor-surface">
+                <span className="form-section-title">Content</span>
+                <div className="qa-editor-grid">
+                  <div className="admin-field">
+                    <label>Question</label>
+                    <input className="admin-input qa-input-strong" type="text" value={qaManageData.question} onChange={e => setQaManageData({...qaManageData, question: e.target.value})} required placeholder="e.g. How should I prepare for a first frontend interview?" />
+                  </div>
+                  <div className="admin-field">
+                    <label>Answer</label>
+                    <textarea className="admin-textarea admin-textarea-tall qa-answer" value={qaManageData.answer} onChange={e => setQaManageData({...qaManageData, answer: e.target.value})} required placeholder="Write a practical answer with clear steps, examples, and what to avoid..." />
+                  </div>
+                </div>
+                <div className="qa-helper">
+                  <span className="qa-helper-dot" />
+                  Keep answers practical and interview-focused for this experience range.
+                </div>
+              </div>
+            </div>
+
+            <div className="admin-footer">
+              <button type="button" className="btn-admin-cancel" onClick={() => setIsManagingQA(false)} disabled={isSaving}>Cancel</button>
+              <button type="submit" className="btn-admin-save" disabled={isSaving}>
+                {isSaving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </dialog>
+
+      <dialog ref={qaConfirmDialogRef} className="course-modal" onClose={() => setIsConfirmingQADelete(null)}>
+        <div className="confirm-modal-panel glass">
+          <div className="confirm-icon-wrap">
+            <Trash2 size={32} />
+          </div>
+          <h2 className="confirm-title">Are you sure?</h2>
+          <p className="confirm-text">
+            This action will permanently delete the Q&A entry. This cannot be undone.
+          </p>
+          <div className="confirm-actions">
+            <button className="btn btn-ghost flex-1" onClick={() => setIsConfirmingQADelete(null)} disabled={isSaving}>No, Cancel</button>
+            <button className="btn btn-danger flex-1" onClick={confirmQADelete} disabled={isSaving}>
               {isSaving ? 'Deleting...' : 'Yes, Delete'}
             </button>
           </div>

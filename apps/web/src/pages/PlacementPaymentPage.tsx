@@ -119,6 +119,7 @@ async function parseApiResponse(response: Response) {
 export default function PlacementPaymentPage() {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const isAdmin = localStorage.getItem('isAuthenticated') === 'true' && localStorage.getItem('userRole') === 'admin';
   const [searchParams] = useSearchParams();
   const packageSlug = searchParams.get('package');
   const { data: sanityPackages, loading: packagesLoading } = useSanityData<CareerPackage[]>(`*[_type == "placementPackage"] | order(amount asc)`);
@@ -150,6 +151,10 @@ export default function PlacementPaymentPage() {
   }
 
   if (!selectedPackage) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (!isAdmin && selectedPackage.isVisible === false) {
     return <Navigate to="/" replace />;
   }
 
