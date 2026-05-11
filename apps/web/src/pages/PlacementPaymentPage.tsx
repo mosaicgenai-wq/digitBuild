@@ -79,6 +79,19 @@ declare global {
       };
     }) => {
       open: () => void;
+      on?: (eventName: 'payment.failed', handler: (response: {
+        error?: {
+          code?: string;
+          description?: string;
+          reason?: string;
+          source?: string;
+          step?: string;
+          metadata?: {
+            order_id?: string;
+            payment_id?: string;
+          };
+        };
+      }) => void | Promise<void>) => void;
     };
   }
 }
@@ -201,13 +214,15 @@ export default function PlacementPaymentPage() {
         throw new Error(typeof orderData.message === 'string' ? orderData.message : 'Unable to create Razorpay order.');
       }
 
+      const orderId = String(orderData.orderId);
+
       const checkout = new window.Razorpay({
         key: String(orderData.keyId),
         amount: Number(orderData.amount),
         currency: String(orderData.currency),
         name: 'DigitBuild',
         description: packageDetails.name,
-        order_id: String(orderData.orderId),
+        order_id: orderId,
         prefill: {
           name: form.name,
           email: form.email,
@@ -243,13 +258,38 @@ export default function PlacementPaymentPage() {
           }
 
           showToast('Payment successful', `${packageDetails.name} payment was verified successfully.`);
-          navigate('/');
+          navigate(`/payment-receipt?orderId=${encodeURIComponent(response.razorpay_order_id)}`);
         },
         modal: {
           ondismiss: () => {
+            void fetch(`${API_BASE}/api/payments/cancel`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ orderId }),
+            });
             setLoading(false);
           },
         },
+      });
+
+      checkout.on?.('payment.failed', async (failure) => {
+        await fetch(`${API_BASE}/api/payments/failure`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            orderId: failure.error?.metadata?.order_id || orderId,
+            paymentId: failure.error?.metadata?.payment_id,
+            code: failure.error?.code,
+            description: failure.error?.description,
+            reason: failure.error?.reason,
+            source: failure.error?.source,
+            step: failure.error?.step,
+          }),
+        });
       });
 
       checkout.open();

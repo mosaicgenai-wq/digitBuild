@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bell, Menu, Moon, Sun, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { ButtonLink } from '../ui/Button';
 import { API_BASE } from '../../config/api';
 
@@ -19,6 +19,7 @@ const links = [
 
 export function Navbar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>(() =>
@@ -31,9 +32,10 @@ export function Navbar() {
     _id: string;
     title: string;
     message: string;
-    eventType: 'purchase_initiated' | 'payment_success';
+    eventType: 'purchase_initiated' | 'payment_success' | 'payment_failed' | 'payment_cancelled' | 'payment_refunded';
     packageName: string;
     customerName: string;
+    orderId?: string;
     isRead?: boolean;
     createdAt?: string;
     _createdAt?: string;
@@ -119,6 +121,18 @@ export function Navbar() {
     }
   }
 
+  function handleNotificationClick(item: { _id: string; orderId?: string }) {
+    void markNotificationRead(item._id, true);
+    setIsNotificationOpen(false);
+
+    if (item.orderId) {
+      navigate(`/admin/payments?orderId=${encodeURIComponent(item.orderId)}`);
+      return;
+    }
+
+    navigate('/admin/payments');
+  }
+
   function formatNotificationTime(value?: string) {
     const date = new Date(value || '');
     if (Number.isNaN(date.getTime())) return '';
@@ -192,7 +206,7 @@ export function Navbar() {
                             type="button"
                             key={item._id}
                             className={`notification-item ${item.isRead === true ? '' : 'is-unread'}`}
-                            onClick={() => void markNotificationRead(item._id, true)}
+                            onClick={() => handleNotificationClick(item)}
                           >
                             <div className="notification-item-top">
                               <span>{item.title}</span>
@@ -210,6 +224,11 @@ export function Navbar() {
             ) : null}
 
             <div className="nav-actions-desktop desktop-only" style={{ gap: '1rem', display: 'flex', alignItems: 'center' }}>
+              {isAdmin ? (
+                <NavLink to="/admin/payments" className="btn-minimalist">
+                  Payments
+                </NavLink>
+              ) : null}
               {isAuthenticated ? (
                 <button onClick={handleLogout} className="btn-minimalist">
                   Logout
@@ -242,6 +261,13 @@ export function Navbar() {
                 {link.label}
               </NavLink>
             ))}
+            {isAuthenticated ? (
+              isAdmin ? (
+                <NavLink to="/admin/payments" className="mobile-menu-link">
+                  Payments
+                </NavLink>
+              ) : null
+            ) : null}
             {isAuthenticated ? (
               <button onClick={handleLogout} className="mobile-menu-link text-left" style={{ background: 'transparent', border: 'none', padding: '1rem 1.5rem' }}>
                 Logout
