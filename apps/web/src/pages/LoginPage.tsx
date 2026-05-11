@@ -27,10 +27,19 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const isLoginValid = formData.username.trim().length > 0 && formData.password.trim().length > 0;
+  const isRegisterValid =
+    formData.name.trim().length > 0 &&
+    formData.email.trim().length > 0 &&
+    formData.phone.trim().length > 0 &&
+    formData.username.trim().length > 0 &&
+    formData.password.trim().length > 0;
+  const canSubmit = mode === 'login' ? isLoginValid : isRegisterValid;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
+    if (error) setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,12 +48,15 @@ export default function LoginPage() {
     setError(null);
 
     const endpoint = mode === 'login' ? `${API_BASE}/api/login` : `${API_BASE}/api/register`;
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15000);
 
     try {
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
+        signal: controller.signal,
       });
 
       const data = await response.json();
@@ -60,8 +72,13 @@ export default function LoginPage() {
         setError(data.message || 'Action failed');
       }
     } catch (err) {
-      setError('Connection failed. Please ensure the backend is running.');
+      if (err instanceof Error && err.name === 'AbortError') {
+        setError('Request timed out. Please try again.');
+      } else {
+        setError('Connection failed. Please ensure the backend is running.');
+      }
     } finally {
+      window.clearTimeout(timeout);
       setIsLoading(false);
     }
   };
@@ -166,8 +183,17 @@ export default function LoginPage() {
                     </motion.p>
                   )}
 
-                  <button type="submit" className={`btn btn-lg btn-block ${isLoading ? 'btn-loading' : ''}`} disabled={isLoading}>
-                    {isLoading ? (mode === 'login' ? 'Signing in...' : 'Creating...') : (mode === 'login' ? 'Sign In' : 'Sign Up')}
+                  <button
+                    type="submit"
+                    className={`btn btn-lg btn-block login-submit-btn ${isLoading ? 'btn-loading' : ''} ${canSubmit && !isLoading ? 'is-ready' : 'is-disabled'}`}
+                    disabled={isLoading || !canSubmit}
+                  >
+                    {isLoading ? (
+                      <span className="btn-loading-content">
+                        <span className="btn-spinner" aria-hidden="true" />
+                        {mode === 'login' ? 'Signing in...' : 'Creating...'}
+                      </span>
+                    ) : (mode === 'login' ? 'Sign In' : 'Sign Up')}
                   </button>
                 </form>
 

@@ -2909,6 +2909,50 @@ select.field option {
   opacity: 0.7;
   cursor: not-allowed;
 }
+.btn-loading-content {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.login-submit-btn {
+  min-height: 3rem;
+  border-radius: 1rem;
+  border: 1px solid hsl(var(--primary) / 0.35);
+  background: linear-gradient(180deg, hsl(var(--primary)), hsl(var(--primary) / 0.9));
+  color: hsl(var(--primary-foreground));
+  font-weight: 600;
+  transition: transform 0.18s ease, box-shadow 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
+}
+.login-submit-btn.is-ready {
+  box-shadow: 0 10px 24px hsl(var(--primary) / 0.35);
+}
+.login-submit-btn.is-ready:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.03);
+}
+.login-submit-btn.is-ready:active {
+  transform: translateY(0);
+}
+.login-submit-btn.is-disabled {
+  background: hsl(var(--muted) / 0.3);
+  border-color: hsl(var(--border));
+  color: hsl(var(--muted-foreground));
+  box-shadow: none;
+}
+.btn-spinner {
+  width: 0.95rem;
+  height: 0.95rem;
+  border: 2px solid hsl(var(--primary-foreground) / 0.45);
+  border-top-color: hsl(var(--primary-foreground));
+  border-radius: 999px;
+  animation: button-spin 0.8s linear infinite;
+}
+@keyframes button-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 /* Enhanced Login & Register Styles */
 .password-toggle {
