@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bell, Menu, Moon, Sun, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { ButtonLink } from '../ui/Button';
 import { API_BASE } from '../../config/api';
@@ -38,6 +38,7 @@ export function Navbar() {
     createdAt?: string;
     _createdAt?: string;
   }>>([]);
+  const notificationWrapRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 20);
@@ -73,6 +74,20 @@ export function Navbar() {
       window.clearInterval(timer);
     };
   }, [isAdmin]);
+
+  useEffect(() => {
+    if (!isNotificationOpen) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (notificationWrapRef.current?.contains(target)) return;
+      setIsNotificationOpen(false);
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, [isNotificationOpen]);
 
   function toggleTheme() {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
@@ -153,7 +168,7 @@ export function Navbar() {
             </button>
 
             {isAdmin ? (
-              <div className="notification-wrap desktop-only">
+              <div ref={notificationWrapRef} className="notification-wrap desktop-only">
                 <button
                   type="button"
                   className="icon-button notification-button"
