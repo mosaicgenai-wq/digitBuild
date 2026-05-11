@@ -129,6 +129,17 @@ async function parseApiResponse(response: Response) {
   }
 }
 
+async function fetchWithTimeout(input: RequestInfo, init?: RequestInit, timeout = 20000) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeout);
+
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 export default function PlacementPaymentPage() {
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -144,6 +155,7 @@ export default function PlacementPaymentPage() {
   const [form, setForm] = useState(initialValues);
   const [errors, setErrors] = useState<Partial<Record<keyof PaymentForm, string>>>({});
   const [loading, setLoading] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   const isFormReady =
     form.name.trim() &&
     form.email.trim() &&
@@ -188,6 +200,7 @@ export default function PlacementPaymentPage() {
     event.preventDefault();
     if (!validate()) return;
 
+    setPaymentError(null);
     setLoading(true);
 
     try {
@@ -197,7 +210,7 @@ export default function PlacementPaymentPage() {
         throw new Error('Unable to load Razorpay checkout.');
       }
 
-      const createOrderResponse = await fetch(`${API_BASE}/api/payments/create-order`, {
+      const createOrderResponse = await fetchWithTimeout(`${API_BASE}/api/payments/create-order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -238,7 +251,7 @@ export default function PlacementPaymentPage() {
           color: '#4f6ef7',
         },
         handler: async (response) => {
-          const verifyResponse = await fetch(`${API_BASE}/api/payments/verify`, {
+          const verifyResponse = await fetchWithTimeout(`${API_BASE}/api/payments/verify`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -252,7 +265,9 @@ export default function PlacementPaymentPage() {
           const verifyData = await parseApiResponse(verifyResponse);
 
           if (!verifyResponse.ok || !verifyData.success) {
-            showToast('Verification failed', typeof verifyData.message === 'string' ? verifyData.message : 'Payment was received but could not be verified.');
+            const message = typeof verifyData.message === 'string' ? verifyData.message : 'Payment was received but could not be verified.';
+            showToast('Verification failed', message);
+            setPaymentError(message);
             setLoading(false);
             return;
           }
@@ -275,6 +290,13 @@ export default function PlacementPaymentPage() {
       });
 
       checkout.on?.('payment.failed', async (failure) => {
+        const failureDescription =
+          failure.error?.description || failure.error?.reason || 'Payment failed to process. Please try again.';
+
+        setPaymentError(failureDescription);
+        showToast('Payment failed', failureDescription);
+        setLoading(false);
+
         await fetch(`${API_BASE}/api/payments/failure`, {
           method: 'POST',
           headers: {
@@ -351,6 +373,7 @@ export default function PlacementPaymentPage() {
             <Reveal delay={0.08}>
               <form onSubmit={handleContinue} className="payment-form-card">
                 <SectionTitle className="mb-3">Basic details</SectionTitle>
+                {paymentError ? <p className="field-error payment-error">{paymentError}</p> : null}
                 <div>
                   <label className="form-field-label" htmlFor="payment-name">
                     Full name <span className="required-mark">*</span>
@@ -400,7 +423,7 @@ export default function PlacementPaymentPage() {
                     Back
                   </Link>
                   <Button type="submit" size="sm" disabled={loading || !isFormReady} aria-disabled={loading || !isFormReady}>
-                    {loading ? 'Opening Razorpay...' : 'Continue'}
+                    {loading ? 'Processing payment...' : 'Continue'}
                     <ArrowRight className="btn-icon" />
                   </Button>
                 </div>

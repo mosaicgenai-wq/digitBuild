@@ -109,6 +109,21 @@ const placementPackageSchema = z.object({
   features: z.array(z.string().trim().min(1)).min(1),
   isVisible: z.boolean().optional().default(true),
 });
+const testimonialSchema = z.object({
+  name: z.string().trim().min(1),
+  role: z.string().trim().min(1),
+  company: z.string().trim().min(1),
+  hike: z.string().trim().min(1),
+  quote: z.string().trim().min(1),
+  isVisible: z.boolean().optional().default(true),
+});
+const homeStatSchema = z.object({
+  label: z.string().trim().min(1),
+  value: z.number().int().nonnegative(),
+  suffix: z.string().trim().min(0).max(4).default(''),
+  order: z.number().int().nonnegative().optional().default(0),
+  isVisible: z.boolean().optional().default(true),
+});
 
 const careerPackages = [
   {
@@ -803,6 +818,78 @@ app.delete('/api/placement-packages/:id', async (request, response) => {
     response.json({ message: 'Placement package deleted.' });
   } catch (error) {
     response.status(500).json({ message: 'Failed to delete placement package.' });
+  }
+});
+
+app.post('/api/testimonials', async (request, response) => {
+  const parsed = testimonialSchema.safeParse(request.body);
+  if (!parsed.success) return response.status(400).json({ message: 'Invalid testimonial data.' });
+
+  try {
+    const created = await sanityClient.create({
+      _type: 'testimonial',
+      ...parsed.data,
+    });
+    response.status(201).json(created);
+  } catch (error) {
+    response.status(500).json({ message: 'Failed to add testimonial.' });
+  }
+});
+
+app.put('/api/testimonials/:id', async (request, response) => {
+  const parsed = testimonialSchema.safeParse(request.body);
+  if (!parsed.success) return response.status(400).json({ message: 'Invalid testimonial data.' });
+
+  try {
+    const updated = await sanityClient.patch(request.params.id).set(parsed.data).commit();
+    response.json(updated);
+  } catch (error) {
+    response.status(500).json({ message: 'Failed to update testimonial.' });
+  }
+});
+
+app.delete('/api/testimonials/:id', async (request, response) => {
+  try {
+    await sanityClient.delete(request.params.id);
+    response.json({ message: 'Testimonial deleted.' });
+  } catch (error) {
+    response.status(500).json({ message: 'Failed to delete testimonial.' });
+  }
+});
+
+app.post('/api/home-stats', async (request, response) => {
+  const parsed = homeStatSchema.safeParse(request.body);
+  if (!parsed.success) return response.status(400).json({ message: 'Invalid home stat data.' });
+
+  try {
+    const created = await sanityClient.create({
+      _type: 'homeStat',
+      ...parsed.data,
+    });
+    response.status(201).json(created);
+  } catch (error) {
+    response.status(500).json({ message: 'Failed to add home stat.' });
+  }
+});
+
+app.put('/api/home-stats/:id', async (request, response) => {
+  const parsed = homeStatSchema.safeParse(request.body);
+  if (!parsed.success) return response.status(400).json({ message: 'Invalid home stat data.' });
+
+  try {
+    const updated = await sanityClient.patch(request.params.id).set(parsed.data).commit();
+    response.json(updated);
+  } catch (error) {
+    response.status(500).json({ message: 'Failed to update home stat.' });
+  }
+});
+
+app.delete('/api/home-stats/:id', async (request, response) => {
+  try {
+    await sanityClient.delete(request.params.id);
+    response.json({ message: 'Home stat deleted.' });
+  } catch (error) {
+    response.status(500).json({ message: 'Failed to delete home stat.' });
   }
 });
 
