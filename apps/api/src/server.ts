@@ -160,6 +160,9 @@ const verifyPaymentSchema = z.object({
   razorpay_payment_id: z.string().trim().min(1),
   razorpay_signature: z.string().trim().min(1),
 });
+const notificationReadSchema = z.object({
+  read: z.boolean(),
+});
 
 async function getCareerPackageBySlug(slug: string) {
   const sanityPackage = await sanityClient.fetch(
@@ -198,6 +201,32 @@ function signaturesMatch(actualSignature: string, expectedSignature: string) {
   const expected = Buffer.from(expectedSignature, 'hex');
 
   return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
+}
+
+type AdminNotification = {
+  _type: 'adminNotification';
+  title: string;
+  message: string;
+  eventType: 'purchase_initiated' | 'payment_success';
+  packageSlug: string;
+  packageName: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  jobRole: string;
+  experience: string;
+  orderId?: string;
+  paymentId?: string;
+  isRead: boolean;
+  createdAt: string;
+};
+
+async function createAdminNotification(payload: AdminNotification) {
+  try {
+    await sanityClient.create(payload);
+  } catch (error) {
+    console.error('Failed to create admin notification:', error);
+  }
 }
 
 app.use(helmet({ contentSecurityPolicy: false }));
@@ -529,6 +558,23 @@ app.post('/api/payments/create-order', async (request, response) => {
       return response.status(502).json({ message: 'Razorpay did not return an order ID.' });
     }
 
+    await createAdminNotification({
+      _type: 'adminNotification',
+      title: 'New Placement Purchase Initiated',
+      message: `${parsed.data.customer.name} started checkout for ${selectedPackage.name}.`,
+      eventType: 'purchase_initiated',
+      packageSlug: selectedPackage.slug,
+      packageName: selectedPackage.name,
+      customerName: parsed.data.customer.name,
+      customerEmail: parsed.data.customer.email,
+      customerPhone: parsed.data.customer.phone,
+      jobRole: parsed.data.customer.jobRole,
+      experience: parsed.data.customer.experience,
+      orderId: order.id,
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    });
+
     return response.status(200).json({
       keyId,
       orderId: order.id,
@@ -573,6 +619,45 @@ app.post('/api/payments/verify', async (request, response) => {
       });
     }
 
+    const orderMeta = await sanityClient.fetch<{
+      notes?: {
+        customerName?: string;
+        customerEmail?: string;
+        customerPhone?: string;
+        jobRole?: string;
+        experience?: string;
+      };
+    }>(
+      `*[_type == "adminNotification" && orderId == $orderId && eventType == "purchase_initiated"] | order(_createdAt desc)[0]{
+        "notes": {
+          "customerName": customerName,
+          "customerEmail": customerEmail,
+          "customerPhone": customerPhone,
+          "jobRole": jobRole,
+          "experience": experience
+        }
+      }`,
+      { orderId: parsed.data.razorpay_order_id },
+    );
+
+    await createAdminNotification({
+      _type: 'adminNotification',
+      title: 'Placement Payment Completed',
+      message: `Payment received for ${selectedPackage.name}.`,
+      eventType: 'payment_success',
+      packageSlug: selectedPackage.slug,
+      packageName: selectedPackage.name,
+      customerName: orderMeta?.notes?.customerName || 'Unknown',
+      customerEmail: orderMeta?.notes?.customerEmail || 'Unknown',
+      customerPhone: orderMeta?.notes?.customerPhone || 'Unknown',
+      jobRole: orderMeta?.notes?.jobRole || 'Unknown',
+      experience: orderMeta?.notes?.experience || 'Unknown',
+      orderId: parsed.data.razorpay_order_id,
+      paymentId: parsed.data.razorpay_payment_id,
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    });
+
     return response.status(200).json({
       success: true,
       message: 'Payment verified successfully.',
@@ -586,6 +671,46 @@ app.post('/api/payments/verify', async (request, response) => {
     return response.status(500).json({
       message: error instanceof Error ? error.message : 'Unexpected verification error.',
     });
+  }
+});
+
+app.get('/api/admin-notifications', async (_request, response) => {
+  try {
+    const notifications = await sanityClient.fetch(
+      `*[_type == "adminNotification"] | order(coalesce(createdAt, _createdAt) desc)[0...50]{
+        _id,
+        title,
+        message,
+        eventType,
+        packageSlug,
+        packageName,
+        customerName,
+        customerEmail,
+        customerPhone,
+        jobRole,
+        experience,
+        orderId,
+        paymentId,
+        isRead,
+        createdAt,
+        _createdAt
+      }`
+    );
+    response.json(notifications);
+  } catch (error) {
+    response.status(500).json({ message: 'Failed to fetch notifications.' });
+  }
+});
+
+app.patch('/api/admin-notifications/:id/read', async (request, response) => {
+  const parsed = notificationReadSchema.safeParse(request.body);
+  if (!parsed.success) return response.status(400).json({ message: 'Invalid read payload.' });
+
+  try {
+    const updated = await sanityClient.patch(request.params.id).set({ isRead: parsed.data.read }).commit();
+    response.json(updated);
+  } catch (error) {
+    response.status(500).json({ message: 'Failed to update notification.' });
   }
 });
 

@@ -1,8 +1,9 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Menu, Moon, Sun, X } from 'lucide-react';
+import { Bell, Menu, Moon, Sun, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { ButtonLink } from '../ui/Button';
+import { API_BASE } from '../../config/api';
 
 const links = [
   { label: 'Home', to: '/' },
@@ -24,6 +25,19 @@ export function Navbar() {
     document.documentElement.classList.contains('dark') ? 'dark' : 'light',
   );
   const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+  const isAdmin = isAuthenticated && localStorage.getItem('userRole') === 'admin';
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Array<{
+    _id: string;
+    title: string;
+    message: string;
+    eventType: 'purchase_initiated' | 'payment_success';
+    packageName: string;
+    customerName: string;
+    isRead?: boolean;
+    createdAt?: string;
+    _createdAt?: string;
+  }>>([]);
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 20);
@@ -34,7 +48,31 @@ export function Navbar() {
 
   useEffect(() => {
     setIsOpen(false);
+    setIsNotificationOpen(false);
   }, [location.pathname, location.hash]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    let active = true;
+    const fetchNotifications = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/api/admin-notifications`);
+        if (!response.ok) return;
+        const data = await response.json();
+        if (active && Array.isArray(data)) setNotifications(data);
+      } catch {
+        // Keep navbar stable even if notifications fail.
+      }
+    };
+
+    void fetchNotifications();
+    const timer = window.setInterval(fetchNotifications, 15000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [isAdmin]);
 
   function toggleTheme() {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
@@ -51,6 +89,32 @@ export function Navbar() {
     window.location.href = '/';
   }
 
+  async function markNotificationRead(id: string, read = true) {
+    try {
+      await fetch(`${API_BASE}/api/admin-notifications/${id}/read`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ read }),
+      });
+      setNotifications((current) => current.map((item) => (
+        item._id === id ? { ...item, isRead: read } : item
+      )));
+    } catch {
+      // Keep UX responsive even if write fails.
+    }
+  }
+
+  function formatNotificationTime(value?: string) {
+    const date = new Date(value || '');
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
   function isLinkActive(to: string) {
     if (to.includes('#')) {
       const [pathname, hash] = to.split('#');
@@ -59,6 +123,8 @@ export function Navbar() {
 
     return location.pathname === to;
   }
+
+  const unreadCount = notifications.filter((item) => item.isRead !== true).length;
 
   return (
     <>
@@ -86,15 +152,59 @@ export function Navbar() {
               {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
             </button>
 
+            {isAdmin ? (
+              <div className="notification-wrap desktop-only">
+                <button
+                  type="button"
+                  className="icon-button notification-button"
+                  onClick={() => setIsNotificationOpen((value) => !value)}
+                  aria-label="Admin notifications"
+                >
+                  <Bell size={16} />
+                  {unreadCount > 0 ? <span className="notification-badge">{unreadCount > 9 ? '9+' : unreadCount}</span> : null}
+                </button>
+                {isNotificationOpen ? (
+                  <div className="notification-menu">
+                    <div className="notification-menu-header">
+                      <strong>Notifications</strong>
+                    </div>
+                    {notifications.length === 0 ? (
+                      <p className="notification-empty">No notifications yet.</p>
+                    ) : (
+                      <div className="notification-list">
+                        {notifications.map((item) => (
+                          <button
+                            type="button"
+                            key={item._id}
+                            className={`notification-item ${item.isRead === true ? '' : 'is-unread'}`}
+                            onClick={() => void markNotificationRead(item._id, true)}
+                          >
+                            <div className="notification-item-top">
+                              <span>{item.title}</span>
+                              <time>{formatNotificationTime(item.createdAt || item._createdAt)}</time>
+                            </div>
+                            <p>{item.message}</p>
+                            <small>{item.customerName} · {item.packageName}</small>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
             <div className="nav-actions-desktop desktop-only" style={{ gap: '1rem', display: 'flex', alignItems: 'center' }}>
               {isAuthenticated ? (
                 <button onClick={handleLogout} className="btn-minimalist">
                   Logout
                 </button>
               ) : null}
-              <ButtonLink to="/contact" size="sm">
-                Get Started
-              </ButtonLink>
+              {!isAdmin ? (
+                <ButtonLink to="/contact" size="sm">
+                  Get Started
+                </ButtonLink>
+              ) : null}
             </div>
 
             <button type="button" className="icon-button mobile-only" onClick={() => setIsOpen((value) => !value)} aria-label="Menu">
@@ -122,9 +232,11 @@ export function Navbar() {
                 Logout
               </button>
             ) : null}
-            <ButtonLink to="/contact" size="lg">
-              Get Started
-            </ButtonLink>
+            {!isAdmin ? (
+              <ButtonLink to="/contact" size="lg">
+                Get Started
+              </ButtonLink>
+            ) : null}
           </motion.div>
         ) : null}
       </AnimatePresence>
