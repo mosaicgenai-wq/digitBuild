@@ -1,6 +1,6 @@
 import { CreditCard, Loader2, ReceiptText, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { Reveal } from '../components/ui/Reveal';
 import { SectionEyebrow, SectionTitle } from '../components/ui/SectionIntro';
 import { API_BASE } from '../config/api';
@@ -9,7 +9,7 @@ type AdminPayment = {
   id: string;
   orderId: string;
   paymentId?: string;
-  status: 'paid' | 'pending';
+  status: 'paid' | 'pending' | 'failed' | 'cancelled' | 'expired' | 'refunded';
   packageSlug: string;
   packageName: string;
   amount: number | null;
@@ -21,7 +21,15 @@ type AdminPayment = {
   experience: string;
   initiatedAt?: string;
   paidAt?: string;
+  failedAt?: string;
+  cancelledAt?: string;
+  refundedAt?: string;
   updatedAt?: string;
+  failureCode?: string;
+  failureDescription?: string;
+  failureReason?: string;
+  failureSource?: string;
+  failureStep?: string;
   events: Array<{
     id: string;
     type: 'purchase_initiated' | 'payment_success';
@@ -63,13 +71,33 @@ function DetailItem({ label, value }: { label: string; value?: string | number |
   );
 }
 
+function getStatusLabel(status: AdminPayment['status']) {
+  const labels: Record<AdminPayment['status'], string> = {
+    pending: 'Pending',
+    paid: 'Paid',
+    failed: 'Failed',
+    cancelled: 'Cancelled',
+    expired: 'Expired',
+    refunded: 'Refunded',
+  };
+
+  return labels[status];
+}
+
+function getRelevantDate(payment: AdminPayment) {
+  return payment.paidAt || payment.failedAt || payment.cancelledAt || payment.refundedAt || payment.updatedAt || payment.initiatedAt;
+}
+
 export default function AdminPaymentsPage() {
   const isAdmin = localStorage.getItem('isAuthenticated') === 'true' && localStorage.getItem('userRole') === 'admin';
+  const [searchParams] = useSearchParams();
+  const targetOrderId = searchParams.get('orderId');
   const [payments, setPayments] = useState<AdminPayment[]>([]);
   const [selectedPayment, setSelectedPayment] = useState<AdminPayment | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const dialogRef = useRef<HTMLDialogElement | null>(null);
+  const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -115,6 +143,17 @@ export default function AdminPaymentsPage() {
       dialog.showModal();
     }
   }, [selectedPayment]);
+
+  useEffect(() => {
+    if (!targetOrderId || loading || payments.length === 0) return;
+
+    const row = rowRefs.current[targetOrderId];
+    if (!row) return;
+
+    window.setTimeout(() => {
+      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 120);
+  }, [loading, payments, targetOrderId]);
 
   if (!isAdmin) {
     return <Navigate to="/login" replace />;
@@ -170,7 +209,14 @@ export default function AdminPaymentsPage() {
                     </thead>
                     <tbody>
                       {payments.map((payment) => (
-                        <tr key={payment.id} onClick={() => setSelectedPayment(payment)}>
+                        <tr
+                          key={payment.id}
+                          ref={(element) => {
+                            rowRefs.current[payment.orderId] = element;
+                          }}
+                          className={payment.orderId === targetOrderId ? 'is-highlighted' : ''}
+                          onClick={() => setSelectedPayment(payment)}
+                        >
                           <td>
                             <button type="button" className="payment-row-button">
                               <span>{payment.customerName}</span>
@@ -181,10 +227,10 @@ export default function AdminPaymentsPage() {
                           <td>{formatAmount(payment.amount)}</td>
                           <td>
                             <span className={`payment-status-badge payment-status-${payment.status}`}>
-                              {payment.status === 'paid' ? 'Paid' : 'Pending'}
+                              {getStatusLabel(payment.status)}
                             </span>
                           </td>
-                          <td>{formatDate(payment.paidAt || payment.updatedAt || payment.initiatedAt)}</td>
+                          <td>{formatDate(getRelevantDate(payment))}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -223,7 +269,7 @@ export default function AdminPaymentsPage() {
                 <strong>{formatAmount(selectedPayment.amount)}</strong>
               </div>
               <span className={`payment-status-badge payment-status-${selectedPayment.status}`}>
-                {selectedPayment.status === 'paid' ? 'Paid' : 'Pending'}
+                {getStatusLabel(selectedPayment.status)}
               </span>
             </div>
 
@@ -237,6 +283,10 @@ export default function AdminPaymentsPage() {
               <DetailItem label="Package slug" value={selectedPayment.packageSlug} />
               <DetailItem label="Initiated at" value={formatDate(selectedPayment.initiatedAt)} />
               <DetailItem label="Paid at" value={formatDate(selectedPayment.paidAt)} />
+              <DetailItem label="Failed at" value={formatDate(selectedPayment.failedAt)} />
+              <DetailItem label="Cancelled at" value={formatDate(selectedPayment.cancelledAt)} />
+              <DetailItem label="Failure reason" value={selectedPayment.failureReason || selectedPayment.failureCode} />
+              <DetailItem label="Failure details" value={selectedPayment.failureDescription} />
             </div>
           </div>
         ) : null}

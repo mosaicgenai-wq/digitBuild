@@ -160,6 +160,19 @@ const verifyPaymentSchema = z.object({
   razorpay_payment_id: z.string().trim().min(1),
   razorpay_signature: z.string().trim().min(1),
 });
+
+const paymentOrderSchema = z.object({
+  orderId: z.string().trim().min(1),
+});
+
+const paymentFailureSchema = paymentOrderSchema.extend({
+  paymentId: z.string().trim().optional(),
+  code: z.string().trim().optional(),
+  description: z.string().trim().optional(),
+  reason: z.string().trim().optional(),
+  source: z.string().trim().optional(),
+  step: z.string().trim().optional(),
+});
 const notificationReadSchema = z.object({
   read: z.boolean(),
 });
@@ -212,7 +225,7 @@ type AdminNotification = {
   _type: 'adminNotification';
   title: string;
   message: string;
-  eventType: 'purchase_initiated' | 'payment_success';
+  eventType: 'purchase_initiated' | 'payment_success' | 'payment_failed' | 'payment_cancelled' | 'payment_refunded';
   packageSlug: string;
   packageName: string;
   amount?: number;
@@ -228,12 +241,222 @@ type AdminNotification = {
   createdAt: string;
 };
 
+type PaymentStatus = 'pending' | 'paid' | 'failed' | 'cancelled' | 'refunded';
+
+type PaymentLog = {
+  _id: string;
+  _type: 'paymentLog';
+  orderId: string;
+  paymentId?: string;
+  status: PaymentStatus;
+  packageSlug: string;
+  packageName: string;
+  amount: number;
+  currency: 'INR';
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  jobRole: string;
+  experience: string;
+  createdAt: string;
+  updatedAt: string;
+  paidAt?: string;
+  failedAt?: string;
+  cancelledAt?: string;
+  refundedAt?: string;
+  failureCode?: string;
+  failureDescription?: string;
+  failureReason?: string;
+  failureSource?: string;
+  failureStep?: string;
+};
+
 async function createAdminNotification(payload: AdminNotification) {
   try {
     await sanityClient.create(payload);
   } catch (error) {
     console.error('Failed to create admin notification:', error);
   }
+}
+
+function getPaymentLogId(orderId: string) {
+  return `paymentLog-${orderId.replace(/[^a-zA-Z0-9_-]/g, '-')}`;
+}
+
+async function getPaymentLogByOrderId(orderId: string) {
+  return await sanityClient.fetch<PaymentLog | null>(
+    `*[_type == "paymentLog" && orderId == $orderId][0]`,
+    { orderId },
+  );
+}
+
+async function upsertPaymentLog(payload: Omit<PaymentLog, '_id' | '_type'>) {
+  const now = new Date().toISOString();
+  const existing = await getPaymentLogByOrderId(payload.orderId);
+
+  if (existing) {
+    return await sanityClient
+      .patch(existing._id)
+      .set({
+        ...payload,
+        updatedAt: now,
+      })
+      .commit();
+  }
+
+  return await sanityClient.create({
+    _id: getPaymentLogId(payload.orderId),
+    _type: 'paymentLog',
+    ...payload,
+    updatedAt: payload.updatedAt || now,
+  });
+}
+
+async function updatePaymentLogStatus(
+  orderId: string,
+  status: PaymentStatus,
+  updates: Partial<PaymentLog> = {},
+) {
+  const existing = await getPaymentLogByOrderId(orderId);
+  if (!existing) return null;
+
+  if ((existing.status === 'paid' || existing.status === 'refunded' || existing.status === 'failed') && status === 'cancelled') {
+    return existing;
+  }
+
+  return await sanityClient
+    .patch(existing._id)
+    .set({
+      ...updates,
+      status,
+      updatedAt: new Date().toISOString(),
+    })
+    .commit();
+}
+
+function getDisplayStatus(status: PaymentStatus, createdAt?: string) {
+  if (status !== 'pending') return status;
+
+  const createdTime = new Date(createdAt || '').getTime();
+  if (Number.isNaN(createdTime)) return status;
+
+  const twentyFourHours = 24 * 60 * 60 * 1000;
+  return Date.now() - createdTime > twentyFourHours ? 'expired' : status;
+}
+
+function formatInvoiceAmount(amount: number) {
+  return `INR ${Math.round(amount / 100).toLocaleString('en-IN')}`;
+}
+
+function formatInvoiceDate(value?: string) {
+  if (!value) return 'Not available';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Not available';
+
+  return date.toLocaleString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function escapePdfText(value: string) {
+  return value.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+}
+
+function createInvoicePdf(payment: PaymentLog) {
+  const invoiceNumber = `DB-${payment.orderId}`;
+  const status = getDisplayStatus(payment.status, payment.createdAt).toUpperCase();
+  const lines = [
+    'DigitBuild',
+    'Payment Invoice',
+    '',
+    `Invoice No: ${invoiceNumber}`,
+    `Status: ${status}`,
+    `Issued: ${formatInvoiceDate(payment.updatedAt || payment.createdAt)}`,
+    '',
+    'Customer',
+    `Name: ${payment.customerName}`,
+    `Email: ${payment.customerEmail}`,
+    `Phone: ${payment.customerPhone}`,
+    '',
+    'Package',
+    `Package: ${payment.packageName}`,
+    `Job Role: ${payment.jobRole}`,
+    `Experience: ${payment.experience}`,
+    '',
+    'Payment',
+    `Amount: ${formatInvoiceAmount(payment.amount)}`,
+    `Order ID: ${payment.orderId}`,
+    `Payment ID: ${payment.paymentId || 'Not available'}`,
+    `Paid At: ${formatInvoiceDate(payment.paidAt)}`,
+    '',
+    'This computer-generated invoice confirms the payment status recorded by DigitBuild.',
+  ];
+
+  const content = [
+    'BT',
+    '/F1 22 Tf',
+    '72 760 Td',
+    `(${escapePdfText(lines[0])}) Tj`,
+    '/F1 14 Tf',
+    '0 -30 Td',
+    `(${escapePdfText(lines[1])}) Tj`,
+    '/F1 10 Tf',
+    ...lines.slice(2).map((line) => `0 -18 Td (${escapePdfText(line)}) Tj`),
+    'ET',
+  ].join('\n');
+
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    `<< /Length ${Buffer.byteLength(content, 'utf8')} >>\nstream\n${content}\nendstream`,
+  ];
+
+  let pdf = '%PDF-1.4\n';
+  const offsets = [0];
+
+  objects.forEach((object, index) => {
+    offsets.push(Buffer.byteLength(pdf, 'utf8'));
+    pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+  });
+
+  const xrefOffset = Buffer.byteLength(pdf, 'utf8');
+  pdf += `xref\n0 ${objects.length + 1}\n`;
+  pdf += '0000000000 65535 f \n';
+  offsets.slice(1).forEach((offset) => {
+    pdf += `${String(offset).padStart(10, '0')} 00000 n \n`;
+  });
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+
+  return Buffer.from(pdf, 'utf8');
+}
+
+function toPublicReceipt(payment: PaymentLog) {
+  return {
+    invoiceNumber: `DB-${payment.orderId}`,
+    orderId: payment.orderId,
+    paymentId: payment.paymentId,
+    status: getDisplayStatus(payment.status, payment.createdAt),
+    packageName: payment.packageName,
+    amount: payment.amount,
+    currency: payment.currency,
+    customerName: payment.customerName,
+    customerEmail: payment.customerEmail,
+    customerPhone: payment.customerPhone,
+    jobRole: payment.jobRole,
+    experience: payment.experience,
+    createdAt: payment.createdAt,
+    updatedAt: payment.updatedAt,
+    paidAt: payment.paidAt,
+    failedAt: payment.failedAt,
+    cancelledAt: payment.cancelledAt,
+    failureDescription: payment.failureDescription,
+  };
 }
 
 app.use(helmet({ contentSecurityPolicy: false }));
@@ -244,6 +467,79 @@ app.use(cors({
   credentials: true,
 }));
 app.use(compression());
+
+app.post('/api/razorpay/webhook', express.raw({ type: 'application/json' }), async (request, response) => {
+  try {
+    const webhookSecret = getRequiredEnv('RAZORPAY_WEBHOOK_SECRET');
+    const signature = request.header('x-razorpay-signature');
+
+    if (!signature) {
+      return response.status(400).json({ message: 'Missing Razorpay signature header.' });
+    }
+
+    const rawBody = Buffer.isBuffer(request.body) ? request.body : Buffer.from(JSON.stringify(request.body ?? {}));
+    const expectedSignature = crypto
+      .createHmac('sha256', webhookSecret)
+      .update(rawBody)
+      .digest('hex');
+
+    if (!signaturesMatch(signature, expectedSignature)) {
+      return response.status(400).json({ success: false, message: 'Invalid webhook signature.' });
+    }
+
+    const payload = JSON.parse(rawBody.toString('utf8')) as {
+      event?: string;
+      payload?: {
+        payment?: {
+          entity?: {
+            id?: string;
+            order_id?: string;
+            error_code?: string;
+            error_description?: string;
+            error_reason?: string;
+            error_source?: string;
+            error_step?: string;
+          };
+        };
+        refund?: {
+          entity?: {
+            payment_id?: string;
+          };
+        };
+      };
+    };
+
+    const payment = payload.payload?.payment?.entity;
+    const orderId = payment?.order_id;
+
+    if (payload.event === 'payment.captured' && orderId) {
+      await updatePaymentLogStatus(orderId, 'paid', {
+        paymentId: payment.id,
+        paidAt: new Date().toISOString(),
+      });
+    }
+
+    if (payload.event === 'payment.failed' && orderId) {
+      await updatePaymentLogStatus(orderId, 'failed', {
+        paymentId: payment.id,
+        failedAt: new Date().toISOString(),
+        failureCode: payment.error_code,
+        failureDescription: payment.error_description,
+        failureReason: payment.error_reason,
+        failureSource: payment.error_source,
+        failureStep: payment.error_step,
+      });
+    }
+
+    response.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Razorpay webhook error:', error);
+    response.status(500).json({
+      message: error instanceof Error ? error.message : 'Unexpected webhook error.',
+    });
+  }
+});
+
 app.use(express.json());
 
 app.get('/api/health', (_request, response) => {
@@ -565,6 +861,24 @@ app.post('/api/payments/create-order', async (request, response) => {
       return response.status(502).json({ message: 'Razorpay did not return an order ID.' });
     }
 
+    const createdAt = new Date().toISOString();
+
+    await upsertPaymentLog({
+      orderId: order.id,
+      status: 'pending',
+      packageSlug: selectedPackage.slug,
+      packageName: selectedPackage.name,
+      amount: selectedPackage.amount,
+      currency: selectedPackage.currency,
+      customerName: parsed.data.customer.name,
+      customerEmail: parsed.data.customer.email,
+      customerPhone: parsed.data.customer.phone,
+      jobRole: parsed.data.customer.jobRole,
+      experience: parsed.data.customer.experience,
+      createdAt,
+      updatedAt: createdAt,
+    });
+
     await createAdminNotification({
       _type: 'adminNotification',
       title: 'New Placement Purchase Initiated',
@@ -581,7 +895,7 @@ app.post('/api/payments/create-order', async (request, response) => {
       experience: parsed.data.customer.experience,
       orderId: order.id,
       isRead: false,
-      createdAt: new Date().toISOString(),
+      createdAt,
     });
 
     return response.status(200).json({
@@ -649,6 +963,13 @@ app.post('/api/payments/verify', async (request, response) => {
       { orderId: parsed.data.razorpay_order_id },
     );
 
+    const paidAt = new Date().toISOString();
+
+    await updatePaymentLogStatus(parsed.data.razorpay_order_id, 'paid', {
+      paymentId: parsed.data.razorpay_payment_id,
+      paidAt,
+    });
+
     await createAdminNotification({
       _type: 'adminNotification',
       title: 'Placement Payment Completed',
@@ -666,7 +987,7 @@ app.post('/api/payments/verify', async (request, response) => {
       orderId: parsed.data.razorpay_order_id,
       paymentId: parsed.data.razorpay_payment_id,
       isRead: false,
-      createdAt: new Date().toISOString(),
+      createdAt: paidAt,
     });
 
     return response.status(200).json({
@@ -685,8 +1006,165 @@ app.post('/api/payments/verify', async (request, response) => {
   }
 });
 
+app.post('/api/payments/cancel', async (request, response) => {
+  const parsed = paymentOrderSchema.safeParse(request.body);
+
+  if (!parsed.success) {
+    return response.status(400).json({ message: 'Missing payment order ID.' });
+  }
+
+  try {
+    const cancelledAt = new Date().toISOString();
+    const updated = await updatePaymentLogStatus(parsed.data.orderId, 'cancelled', {
+      cancelledAt,
+    });
+
+    if (!updated) {
+      return response.status(404).json({ message: 'Payment log not found.' });
+    }
+
+    await createAdminNotification({
+      _type: 'adminNotification',
+      title: 'Placement Payment Cancelled',
+      message: `${updated.customerName || 'A customer'} closed checkout for ${updated.packageName || 'a placement package'}.`,
+      eventType: 'payment_cancelled',
+      packageSlug: updated.packageSlug,
+      packageName: updated.packageName,
+      amount: updated.amount,
+      currency: updated.currency,
+      customerName: updated.customerName,
+      customerEmail: updated.customerEmail,
+      customerPhone: updated.customerPhone,
+      jobRole: updated.jobRole,
+      experience: updated.experience,
+      orderId: parsed.data.orderId,
+      paymentId: updated.paymentId,
+      isRead: false,
+      createdAt: cancelledAt,
+    });
+
+    response.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Payment cancellation tracking error:', error);
+    response.status(500).json({ message: 'Failed to track cancelled payment.' });
+  }
+});
+
+app.post('/api/payments/failure', async (request, response) => {
+  const parsed = paymentFailureSchema.safeParse(request.body);
+
+  if (!parsed.success) {
+    return response.status(400).json({ message: 'Invalid payment failure details.' });
+  }
+
+  try {
+    const failedAt = new Date().toISOString();
+    const updated = await updatePaymentLogStatus(parsed.data.orderId, 'failed', {
+      paymentId: parsed.data.paymentId,
+      failedAt,
+      failureCode: parsed.data.code,
+      failureDescription: parsed.data.description,
+      failureReason: parsed.data.reason,
+      failureSource: parsed.data.source,
+      failureStep: parsed.data.step,
+    });
+
+    if (!updated) {
+      return response.status(404).json({ message: 'Payment log not found.' });
+    }
+
+    await createAdminNotification({
+      _type: 'adminNotification',
+      title: 'Placement Payment Failed',
+      message: `${updated.customerName || 'A customer'} had a failed payment for ${updated.packageName || 'a placement package'}.`,
+      eventType: 'payment_failed',
+      packageSlug: updated.packageSlug,
+      packageName: updated.packageName,
+      amount: updated.amount,
+      currency: updated.currency,
+      customerName: updated.customerName,
+      customerEmail: updated.customerEmail,
+      customerPhone: updated.customerPhone,
+      jobRole: updated.jobRole,
+      experience: updated.experience,
+      orderId: parsed.data.orderId,
+      paymentId: parsed.data.paymentId,
+      isRead: false,
+      createdAt: failedAt,
+    });
+
+    response.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Payment failure tracking error:', error);
+    response.status(500).json({ message: 'Failed to track failed payment.' });
+  }
+});
+
+app.get('/api/payments/:orderId/receipt', async (request, response) => {
+  try {
+    const payment = await getPaymentLogByOrderId(request.params.orderId);
+
+    if (!payment) {
+      return response.status(404).json({ message: 'Receipt not found.' });
+    }
+
+    response.json(toPublicReceipt(payment));
+  } catch (error) {
+    console.error('Receipt fetch error:', error);
+    response.status(500).json({ message: 'Failed to fetch receipt.' });
+  }
+});
+
+app.get('/api/payments/:orderId/invoice.pdf', async (request, response) => {
+  try {
+    const payment = await getPaymentLogByOrderId(request.params.orderId);
+
+    if (!payment) {
+      return response.status(404).json({ message: 'Invoice not found.' });
+    }
+
+    const pdf = createInvoicePdf(payment);
+    response.setHeader('Content-Type', 'application/pdf');
+    response.setHeader('Content-Disposition', `attachment; filename="digitbuild-invoice-${payment.orderId}.pdf"`);
+    response.send(pdf);
+  } catch (error) {
+    console.error('Invoice PDF error:', error);
+    response.status(500).json({ message: 'Failed to generate invoice.' });
+  }
+});
+
 app.get('/api/admin-payments', async (_request, response) => {
   try {
+    const paymentLogs = await sanityClient.fetch<Array<PaymentLog & { _createdAt?: string }>>(
+      `*[_type == "paymentLog"] | order(coalesce(updatedAt, createdAt, _createdAt) desc){
+        _id,
+        orderId,
+        paymentId,
+        status,
+        packageSlug,
+        packageName,
+        amount,
+        currency,
+        customerName,
+        customerEmail,
+        customerPhone,
+        jobRole,
+        experience,
+        createdAt,
+        updatedAt,
+        paidAt,
+        failedAt,
+        cancelledAt,
+        refundedAt,
+        failureCode,
+        failureDescription,
+        failureReason,
+        failureSource,
+        failureStep,
+        _createdAt
+      }`
+    );
+
     const notifications = await sanityClient.fetch<Array<{
       _id: string;
       eventType: 'purchase_initiated' | 'payment_success';
@@ -704,7 +1182,7 @@ app.get('/api/admin-payments', async (_request, response) => {
       createdAt?: string;
       _createdAt?: string;
     }>>(
-      `*[_type == "adminNotification" && defined(orderId)] | order(coalesce(createdAt, _createdAt) desc){
+      `*[_type == "adminNotification" && defined(orderId) && eventType in ["purchase_initiated", "payment_success"]] | order(coalesce(createdAt, _createdAt) desc){
         _id,
         eventType,
         packageSlug,
@@ -723,11 +1201,12 @@ app.get('/api/admin-payments', async (_request, response) => {
       }`
     );
 
+    const loggedOrderIds = new Set(paymentLogs.map((log) => log.orderId));
     const paymentsByOrder = new Map<string, {
       id: string;
       orderId: string;
       paymentId?: string;
-      status: 'paid' | 'pending';
+      status: PaymentStatus | 'expired';
       packageSlug: string;
       packageName: string;
       amount: number | null;
@@ -739,16 +1218,59 @@ app.get('/api/admin-payments', async (_request, response) => {
       experience: string;
       initiatedAt?: string;
       paidAt?: string;
+      failedAt?: string;
+      cancelledAt?: string;
+      refundedAt?: string;
       updatedAt?: string;
+      failureCode?: string;
+      failureDescription?: string;
+      failureReason?: string;
+      failureSource?: string;
+      failureStep?: string;
       events: Array<{
         id: string;
-        type: 'purchase_initiated' | 'payment_success';
+        type: string;
         createdAt?: string;
       }>;
     }>();
 
+    for (const log of paymentLogs) {
+      paymentsByOrder.set(log.orderId, {
+        id: log.orderId,
+        orderId: log.orderId,
+        paymentId: log.paymentId,
+        status: getDisplayStatus(log.status, log.createdAt || log._createdAt),
+        packageSlug: log.packageSlug,
+        packageName: log.packageName,
+        amount: log.amount,
+        currency: log.currency,
+        customerName: log.customerName,
+        customerEmail: log.customerEmail,
+        customerPhone: log.customerPhone,
+        jobRole: log.jobRole,
+        experience: log.experience,
+        initiatedAt: log.createdAt || log._createdAt,
+        paidAt: log.paidAt,
+        failedAt: log.failedAt,
+        cancelledAt: log.cancelledAt,
+        refundedAt: log.refundedAt,
+        updatedAt: log.updatedAt || log.createdAt || log._createdAt,
+        failureCode: log.failureCode,
+        failureDescription: log.failureDescription,
+        failureReason: log.failureReason,
+        failureSource: log.failureSource,
+        failureStep: log.failureStep,
+        events: [{
+          id: log._id,
+          type: log.status,
+          createdAt: log.updatedAt || log.createdAt || log._createdAt,
+        }],
+      });
+    }
+
     for (const item of notifications) {
       if (!item.orderId) continue;
+      if (loggedOrderIds.has(item.orderId)) continue;
 
       const packageFallback = item.packageSlug
         ? careerPackages.find((pkg) => pkg.slug === item.packageSlug)
@@ -803,7 +1325,11 @@ app.get('/api/admin-payments', async (_request, response) => {
       paymentsByOrder.set(item.orderId, current);
     }
 
-    response.json(Array.from(paymentsByOrder.values()));
+    response.json(Array.from(paymentsByOrder.values()).sort((a, b) => {
+      const bTime = new Date(b.updatedAt || b.paidAt || b.initiatedAt || '').getTime();
+      const aTime = new Date(a.updatedAt || a.paidAt || a.initiatedAt || '').getTime();
+      return (Number.isNaN(bTime) ? 0 : bTime) - (Number.isNaN(aTime) ? 0 : aTime);
+    }));
   } catch (error) {
     console.error('Failed to fetch admin payments:', error);
     response.status(500).json({ message: 'Failed to fetch payments.' });
