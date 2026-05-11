@@ -210,6 +210,11 @@ export function Navbar() {
             ) : null}
 
             <div className="nav-actions-desktop desktop-only" style={{ gap: '1rem', display: 'flex', alignItems: 'center' }}>
+              {isAdmin ? (
+                <NavLink to="/admin/payments" className="btn-minimalist">
+                  Payments
+                </NavLink>
+              ) : null}
               {isAuthenticated ? (
                 <button onClick={handleLogout} className="btn-minimalist">
                   Logout
@@ -242,6 +247,13 @@ export function Navbar() {
                 {link.label}
               </NavLink>
             ))}
+            {isAuthenticated ? (
+              isAdmin ? (
+                <NavLink to="/admin/payments" className="mobile-menu-link">
+                  Payments
+                </NavLink>
+              ) : null
+            ) : null}
             {isAuthenticated ? (
               <button onClick={handleLogout} className="mobile-menu-link text-left" style={{ background: 'transparent', border: 'none', padding: '1rem 1.5rem' }}>
                 Logout

@@ -15,6 +15,7 @@ const ContactPage = lazy(() => import('./pages/ContactPage'));
 const BlogPage = lazy(() => import('./pages/BlogPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const PlacementPaymentPage = lazy(() => import('./pages/PlacementPaymentPage'));
+const AdminPaymentsPage = lazy(() => import('./pages/AdminPaymentsPage'));
 
 function ScrollManager() {
   const location = useLocation();
@@ -66,6 +67,7 @@ export function App() {
               <Route path="/career" element={<CareerPage />} />
               <Route path="/blog" element={<BlogPage />} />
               <Route path="/placement-payment" element={<PlacementPaymentPage />} />
+              <Route path="/admin/payments" element={<AdminPaymentsPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

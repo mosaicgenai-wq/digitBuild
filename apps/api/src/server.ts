@@ -164,7 +164,12 @@ const notificationReadSchema = z.object({
   read: z.boolean(),
 });
 
-async function getCareerPackageBySlug(slug: string) {
+async function getCareerPackageBySlug(slug: string): Promise<{
+  slug: string;
+  name: string;
+  amount: number;
+  currency: 'INR';
+} | null> {
   const sanityPackage = await sanityClient.fetch(
     `*[_type == "placementPackage" && slug == $slug][0]{
       slug,
@@ -210,6 +215,8 @@ type AdminNotification = {
   eventType: 'purchase_initiated' | 'payment_success';
   packageSlug: string;
   packageName: string;
+  amount?: number;
+  currency?: 'INR';
   customerName: string;
   customerEmail: string;
   customerPhone: string;
@@ -565,6 +572,8 @@ app.post('/api/payments/create-order', async (request, response) => {
       eventType: 'purchase_initiated',
       packageSlug: selectedPackage.slug,
       packageName: selectedPackage.name,
+      amount: selectedPackage.amount,
+      currency: selectedPackage.currency,
       customerName: parsed.data.customer.name,
       customerEmail: parsed.data.customer.email,
       customerPhone: parsed.data.customer.phone,
@@ -647,6 +656,8 @@ app.post('/api/payments/verify', async (request, response) => {
       eventType: 'payment_success',
       packageSlug: selectedPackage.slug,
       packageName: selectedPackage.name,
+      amount: selectedPackage.amount,
+      currency: selectedPackage.currency,
       customerName: orderMeta?.notes?.customerName || 'Unknown',
       customerEmail: orderMeta?.notes?.customerEmail || 'Unknown',
       customerPhone: orderMeta?.notes?.customerPhone || 'Unknown',
@@ -671,6 +682,131 @@ app.post('/api/payments/verify', async (request, response) => {
     return response.status(500).json({
       message: error instanceof Error ? error.message : 'Unexpected verification error.',
     });
+  }
+});
+
+app.get('/api/admin-payments', async (_request, response) => {
+  try {
+    const notifications = await sanityClient.fetch<Array<{
+      _id: string;
+      eventType: 'purchase_initiated' | 'payment_success';
+      packageSlug?: string;
+      packageName?: string;
+      amount?: number;
+      currency?: 'INR';
+      customerName?: string;
+      customerEmail?: string;
+      customerPhone?: string;
+      jobRole?: string;
+      experience?: string;
+      orderId?: string;
+      paymentId?: string;
+      createdAt?: string;
+      _createdAt?: string;
+    }>>(
+      `*[_type == "adminNotification" && defined(orderId)] | order(coalesce(createdAt, _createdAt) desc){
+        _id,
+        eventType,
+        packageSlug,
+        packageName,
+        amount,
+        currency,
+        customerName,
+        customerEmail,
+        customerPhone,
+        jobRole,
+        experience,
+        orderId,
+        paymentId,
+        createdAt,
+        _createdAt
+      }`
+    );
+
+    const paymentsByOrder = new Map<string, {
+      id: string;
+      orderId: string;
+      paymentId?: string;
+      status: 'paid' | 'pending';
+      packageSlug: string;
+      packageName: string;
+      amount: number | null;
+      currency: 'INR';
+      customerName: string;
+      customerEmail: string;
+      customerPhone: string;
+      jobRole: string;
+      experience: string;
+      initiatedAt?: string;
+      paidAt?: string;
+      updatedAt?: string;
+      events: Array<{
+        id: string;
+        type: 'purchase_initiated' | 'payment_success';
+        createdAt?: string;
+      }>;
+    }>();
+
+    for (const item of notifications) {
+      if (!item.orderId) continue;
+
+      const packageFallback = item.packageSlug
+        ? careerPackages.find((pkg) => pkg.slug === item.packageSlug)
+        : undefined;
+      const createdAt = item.createdAt || item._createdAt;
+      const existing = paymentsByOrder.get(item.orderId);
+      const current = existing ?? {
+        id: item.orderId,
+        orderId: item.orderId,
+        status: 'pending' as const,
+        packageSlug: item.packageSlug || '',
+        packageName: item.packageName || packageFallback?.name || 'Unknown package',
+        amount: typeof item.amount === 'number' ? item.amount : packageFallback?.amount ?? null,
+        currency: item.currency || packageFallback?.currency || 'INR',
+        customerName: item.customerName || 'Unknown',
+        customerEmail: item.customerEmail || 'Unknown',
+        customerPhone: item.customerPhone || 'Unknown',
+        jobRole: item.jobRole || 'Unknown',
+        experience: item.experience || 'Unknown',
+        initiatedAt: item.eventType === 'purchase_initiated' ? createdAt : undefined,
+        paidAt: item.eventType === 'payment_success' ? createdAt : undefined,
+        updatedAt: createdAt,
+        events: [],
+      };
+
+      if (item.eventType === 'payment_success') {
+        current.status = 'paid';
+        current.paymentId = item.paymentId || current.paymentId;
+        current.paidAt = createdAt || current.paidAt;
+      }
+
+      if (item.eventType === 'purchase_initiated') {
+        current.initiatedAt = createdAt || current.initiatedAt;
+      }
+
+      current.packageSlug = current.packageSlug || item.packageSlug || '';
+      current.packageName = item.packageName || current.packageName;
+      current.amount = typeof item.amount === 'number' ? item.amount : current.amount;
+      current.currency = item.currency || current.currency;
+      current.customerName = item.customerName || current.customerName;
+      current.customerEmail = item.customerEmail || current.customerEmail;
+      current.customerPhone = item.customerPhone || current.customerPhone;
+      current.jobRole = item.jobRole || current.jobRole;
+      current.experience = item.experience || current.experience;
+      current.updatedAt = current.updatedAt || createdAt;
+      current.events.push({
+        id: item._id,
+        type: item.eventType,
+        createdAt,
+      });
+
+      paymentsByOrder.set(item.orderId, current);
+    }
+
+    response.json(Array.from(paymentsByOrder.values()));
+  } catch (error) {
+    console.error('Failed to fetch admin payments:', error);
+    response.status(500).json({ message: 'Failed to fetch payments.' });
   }
 });
 
